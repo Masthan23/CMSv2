@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Dashverse</title>
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .auth-container { background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; max-width: 1000px; width: 100%; display: flex; min-height: 600px; }
+        .left-section { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 60px 40px; color: white; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .logo { width: 150px; height: 150px; margin-bottom: 30px; animation: float 3s ease-in-out infinite; object-fit: contain; }
+        .logo-fallback { width: 150px; height: 150px; margin-bottom: 30px; background: rgba(255,255,255,0.2); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 4rem; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        .brand-title { font-size: 2.5rem; font-weight: 700; margin-bottom: 15px; }
+        .brand-subtitle { font-size: 1.1rem; opacity: 0.9; }
+        .right-section { flex: 1; padding: 50px 50px; display: flex; flex-direction: column; justify-content: flex-start; overflow-y: auto; max-height: 90vh; }
+        .form-header { margin-bottom: 25px; }
+        .form-header h2 { font-size: 2rem; color: #2c3e50; margin-bottom: 12px; }
+        .form-header p { color: #6c757d; font-size: 1rem; line-height: 1.5; }
+        .user-type-selector { display: flex; gap: 15px; margin-bottom: 25px; }
+        .user-type-card { flex: 1; padding: 20px; border: 2px solid #e9ecef; border-radius: 12px; cursor: pointer; transition: all 0.3s; text-align: center; background: white; }
+        .user-type-card:hover { border-color: #667eea; transform: translateY(-2px); }
+        .user-type-card.active { border-color: #667eea; background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%); }
+        .user-type-card .icon { font-size: 2rem; margin-bottom: 10px; }
+        .user-type-card .title { font-size: 1.1rem; font-weight: 600; color: #2c3e50; margin-bottom: 5px; }
+        .user-type-card .description { font-size: 0.875rem; color: #6c757d; }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; margin-bottom: 8px; color: #495057; font-weight: 500; font-size: 0.95rem; }
+        .required { color: #dc3545; }
+        .form-input { width: 100%; padding: 14px 16px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem; transition: all 0.3s; }
+        .form-input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 4px rgba(102,126,234,0.1); }
+        .form-input.error { border-color: #dc3545; }
+        .form-input.success { border-color: #28a745; }
+        .password-input-wrapper { position: relative; }
+        .password-input-wrapper .form-input { padding-right: 45px; }
+        .password-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 5px; color: #6c757d; }
+        .password-toggle svg { width: 20px; height: 20px; display: block; }
+        .error-message { color: #dc3545; font-size: 0.875rem; margin-top: 5px; display: none; }
+        .error-message.show { display: block; }
+        .success-message { color: #28a745; font-size: 0.875rem; margin-top: 5px; display: none; }
+        .success-message.show { display: block; }
+        .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 1.05rem; font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; margin-top: 10px; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102,126,234,0.4); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .form-links { margin-top: 20px; text-align: center; }
+        .form-links a { color: #667eea; text-decoration: none; font-weight: 500; }
+        .form-links a:hover { color: #764ba2; }
+        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; display: none; }
+        .alert.show { display: block; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .writer-fields { display: none; }
+        .writer-fields.show { display: block; }
+        .loading-msg { text-align: center; padding: 10px; color: #667eea; font-size: 0.875rem; display: none; }
+        .loading-msg.show { display: block; }
+        .loading-msg.error-state { color: #dc3545; }
+        .already-exists-banner { background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 16px 18px; margin-bottom: 20px; display: none; text-align: center; }
+        .already-exists-banner.show { display: block; }
+        .already-exists-banner p { color: #856404; font-size: 0.95rem; margin-bottom: 10px; }
+        .already-exists-banner .banner-links { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .already-exists-banner a.btn-signin { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 9px 22px; border-radius: 7px; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+        .already-exists-banner a.btn-forgot { display: inline-block; background: white; color: #667eea; padding: 9px 22px; border-radius: 7px; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 2px solid #667eea; }
+        .retry-btn { display: inline-block; margin-top: 8px; padding: 6px 16px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-family: inherit; }
+        @media (max-width: 768px) { .auth-container { flex-direction: column; } .left-section { padding: 40px 30px; } .logo { width: 100px; height: 100px; } .brand-title { font-size: 2rem; } .right-section { padding: 40px 30px; } .user-type-selector { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="left-section">
+            <img src="dashtoon_logo.jpg" alt="Dashverse Logo" class="logo"
+                 onerror="this.style.display='none';document.getElementById('logoFallback').style.display='flex';">
+            <div class="logo-fallback" id="logoFallback" style="display:none;">🎬</div>
+            <h1 class="brand-title">Dashverse</h1>
+            <p class="brand-subtitle">Join our creative community</p>
+        </div>
+
+        <div class="right-section">
+            <div class="form-header">
+                <h2>Create Account</h2>
+                <p>Choose your account type and get started</p>
+            </div>
+
+            <div class="user-type-selector" role="radiogroup" aria-label="Account type">
+                <div class="user-type-card active" data-type="dashverse" id="dashverseCard"
+                     role="radio" aria-checked="true" tabindex="0">
+                    <div class="icon">🏢</div>
+                    <div class="title">Dashverse User</div>
+                    <div class="description">Internal team member</div>
+                </div>
+                <div class="user-type-card" data-type="writer" id="writerCard"
+                     role="radio" aria-checked="false" tabindex="0">
+                    <div class="icon">✍️</div>
+                    <div class="title">Writer</div>
+                    <div class="description">Content creator</div>
+                </div>
+            </div>
+
+            <div class="loading-msg" id="loadingMsg">⏳ Connecting to server...</div>
+            <div class="alert alert-error" id="errorAlert" role="alert" aria-live="polite"></div>
+
+            <div class="already-exists-banner" id="alreadyExistsBanner" role="alert">
+                <p>⚠️ An account with this email already exists. Please sign in or reset your password.</p>
+                <div class="banner-links">
+                    <a href="login.html" class="btn-signin">🔐 Sign In</a>
+                    <a href="forgot-password.html" class="btn-forgot">🔑 Forgot Password?</a>
+                </div>
+            </div>
+
+            <form id="signupForm" autocomplete="off" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="name">Full Name <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="name"
+                           placeholder="Your Name" required maxlength="100" autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Address <span class="required">*</span></label>
+                    <input type="email" class="form-input" id="email"
+                           placeholder="your@email.com" required maxlength="254" autocomplete="email">
+                    <div class="error-message" id="emailDomainError">
+                        ⚠️ Only @dashverse.ai emails are allowed for Dashverse users.
+                    </div>
+                    <div class="success-message" id="emailDomainSuccess">✅ Valid Dashverse email!</div>
+                </div>
+
+                <div class="writer-fields" id="writerFields">
+                    <div class="form-group">
+                        <label class="form-label" for="phone">Phone Number <span class="required">*</span></label>
+                        <input type="tel" class="form-input" id="phone"
+                               placeholder="+91 98765 43210" maxlength="20" autocomplete="tel">
+                        <div class="error-message" id="phoneError">Phone number is required (min 7 digits)</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="company">Company <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="company"
+                               placeholder="Your Company" maxlength="200" autocomplete="organization">
+                        <div class="error-message" id="companyError">Company name is required</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Password <span class="required">*</span></label>
+                    <div class="password-input-wrapper">
+                        <input type="password" class="form-input" id="password"
+                               placeholder="At least 8 characters" required maxlength="128" autocomplete="new-password">
+                        <button type="button" class="password-toggle" id="togglePassword" aria-label="Show password">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="confirmPassword">Confirm Password <span class="required">*</span></label>
+                    <div class="password-input-wrapper">
+                        <input type="password" class="form-input" id="confirmPassword"
+                               placeholder="Re-enter password" required maxlength="128" autocomplete="new-password">
+                        <button type="button" class="password-toggle" id="toggleConfirmPassword" aria-label="Show confirm password">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary" id="signupBtn" disabled>Create Account</button>
+            </form>
+
+            <div class="form-links">
+                Already have an account? <a href="login.html">Sign In</a>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+    import {
+        auth, db, ensureInitialized,
+        createUserWithEmailAndPassword, sendEmailVerification,
+        doc, setDoc, serverTimestamp,
+        isValidEmail, sanitizeInput, truncate,
+        RateLimiter, SecureSession
+    } from './firebase.js';
+
+    let selectedUserType = 'dashverse';
+    let firebaseReady    = false;
+    const signupLimiter  = new RateLimiter(3, 15 * 60 * 1000, 'signup');
+
+    function isStrongPassword(pw) { return pw.length >= 8; }
+    function isValidPhone(phone) {
+        const cleaned = phone.replace(/[\s\-()]/g, '');
+        return /^[+\d]{7,20}$/.test(cleaned);
+    }
+
+    function showError(msg) {
+        hideAllAlerts();
+        const el = document.getElementById('errorAlert');
+        el.textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 8000);
+    }
+    function showAlreadyExists() {
+        hideAllAlerts();
+        document.getElementById('alreadyExistsBanner').classList.add('show');
+        document.getElementById('email').classList.add('error');
+    }
+    function hideAllAlerts() {
+        document.getElementById('errorAlert').classList.remove('show');
+        document.getElementById('alreadyExistsBanner').classList.remove('show');
+    }
+    function clearEmailFeedback() {
+        document.getElementById('emailDomainError').classList.remove('show');
+        document.getElementById('emailDomainSuccess').classList.remove('show');
+        document.getElementById('email').classList.remove('error', 'success');
+    }
+    function validateEmailDomain() {
+        const email = document.getElementById('email').value.trim().toLowerCase();
+        if (selectedUserType !== 'dashverse' || !email.includes('@')) { clearEmailFeedback(); return; }
+        if (email.endsWith('@dashverse.ai')) {
+            document.getElementById('emailDomainError').classList.remove('show');
+            document.getElementById('emailDomainSuccess').classList.add('show');
+            document.getElementById('email').classList.remove('error');
+            document.getElementById('email').classList.add('success');
+        } else {
+            document.getElementById('emailDomainSuccess').classList.remove('show');
+            document.getElementById('emailDomainError').classList.add('show');
+            document.getElementById('email').classList.remove('success');
+            document.getElementById('email').classList.add('error');
+        }
+    }
+
+    async function waitForFirebase() {
+        const loadingMsg = document.getElementById('loadingMsg');
+        const signupBtn  = document.getElementById('signupBtn');
+        loadingMsg.classList.add('show');
+        loadingMsg.classList.remove('error-state');
+        loadingMsg.textContent = '⏳ Connecting to server...';
+        signupBtn.disabled = true;
+        try {
+            await ensureInitialized();
+            firebaseReady      = true;
+            loadingMsg.classList.remove('show');
+            signupBtn.disabled = false;
+            console.log('[Signup] Firebase ready ✅');
+        } catch (e) {
+            console.error('[Signup] Firebase init failed:', e.message);
+            loadingMsg.classList.add('error-state');
+            loadingMsg.innerHTML = `❌ Failed to connect: ${e.message}<br>
+                <button class="retry-btn" onclick="location.reload()">🔄 Retry</button>`;
+        }
+    }
+
+    waitForFirebase();
+
+    // Account type cards
+    document.getElementById('dashverseCard').addEventListener('click', function() {
+        selectedUserType = 'dashverse';
+        this.classList.add('active'); this.setAttribute('aria-checked', 'true');
+        document.getElementById('writerCard').classList.remove('active');
+        document.getElementById('writerCard').setAttribute('aria-checked', 'false');
+        document.getElementById('writerFields').classList.remove('show');
+        validateEmailDomain();
+    });
+    document.getElementById('writerCard').addEventListener('click', function() {
+        selectedUserType = 'writer';
+        this.classList.add('active'); this.setAttribute('aria-checked', 'true');
+        document.getElementById('dashverseCard').classList.remove('active');
+        document.getElementById('dashverseCard').setAttribute('aria-checked', 'false');
+        document.getElementById('writerFields').classList.add('show');
+        clearEmailFeedback();
+    });
+    ['dashverseCard','writerCard'].forEach(id => {
+        document.getElementById(id).addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+        });
+    });
+
+    document.getElementById('email').addEventListener('input', validateEmailDomain);
+    document.getElementById('name').addEventListener('input', hideAllAlerts);
+
+    function setupToggle(btnId, inputId) {
+        document.getElementById(btnId).addEventListener('click', function() {
+            const input = document.getElementById(inputId);
+            const isPass = input.type === 'password';
+            input.type = isPass ? 'text' : 'password';
+            this.setAttribute('aria-label', isPass ? 'Hide password' : 'Show password');
+        });
+    }
+    setupToggle('togglePassword', 'password');
+    setupToggle('toggleConfirmPassword', 'confirmPassword');
+
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideAllAlerts();
+
+        if (!firebaseReady) { showError('Still connecting. Please wait...'); return; }
+        if (!signupLimiter.canProceed()) {
+            showError('Too many signup attempts. Please wait 15 minutes.');
+            return;
+        }
+
+        const name            = sanitizeInput(document.getElementById('name').value, 100);
+        const email           = sanitizeInput(document.getElementById('email').value, 254).toLowerCase();
+        const phone           = sanitizeInput(document.getElementById('phone').value, 20);
+        const company         = sanitizeInput(document.getElementById('company').value, 200);
+        const password        = document.getElementById('password').value.substring(0, 128);
+        const confirmPassword = document.getElementById('confirmPassword').value.substring(0, 128);
+        const signupBtn       = document.getElementById('signupBtn');
+
+        if (!name || name.length < 2)  { showError('Please enter a valid full name (at least 2 characters).'); return; }
+        if (!isValidEmail(email))       { showError('Please enter a valid email address.'); return; }
+        if (selectedUserType === 'dashverse' && !email.endsWith('@dashverse.ai')) {
+            showError('Dashverse users must use an @dashverse.ai email address.'); return;
+        }
+        if (selectedUserType === 'writer' && email.endsWith('@dashverse.ai')) {
+            showError('Writers must not use an @dashverse.ai email address.'); return;
+        }
+        if (selectedUserType === 'writer') {
+            if (!phone || !isValidPhone(phone)) { showError('Please enter a valid phone number.'); return; }
+            if (!company || company.length < 2) { showError('Please enter your company name.'); return; }
+        }
+        if (!isStrongPassword(password)) { showError('Password must be at least 8 characters long.'); return; }
+        if (password !== confirmPassword) { showError('Passwords do not match. Please try again.'); return; }
+
+        signupBtn.disabled    = true;
+        signupBtn.textContent = 'Creating account...';
+
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user           = userCredential.user;
+            const collectionName = selectedUserType === 'dashverse' ? 'admins' : 'writers';
+
+            const userData = {
+                uid: user.uid, name, email,
+                role: selectedUserType === 'dashverse' ? 'admin' : 'writer',
+                emailVerified: false, createdAt: serverTimestamp(),
+            };
+            if (selectedUserType === 'writer') { userData.phone = phone; userData.company = company; }
+
+            await setDoc(doc(db, collectionName, user.uid), userData);
+            await sendEmailVerification(user);
+
+            SecureSession.setPendingVerification({ email, name });
+            window.location.replace('verify-email.html');
+
+        } catch (error) {
+            console.error('[Signup] Error:', error.code, error.message);
+            if (error.code === 'auth/email-already-in-use') {
+                showAlreadyExists();
+            } else {
+                let message = 'An error occurred. Please try again.';
+                if (error.code === 'auth/invalid-email')               message = 'Invalid email format.';
+                else if (error.code === 'auth/weak-password')          message = 'Password is too weak.';
+                else if (error.code === 'auth/network-request-failed') message = 'Network error. Please check your connection.';
+                showError(message);
+            }
+            signupBtn.disabled    = false;
+            signupBtn.textContent = 'Create Account';
+        }
+    });
+    </script>
+</body>
+</html>

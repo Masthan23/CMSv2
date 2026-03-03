@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Dashverse</title>
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .auth-container { background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; max-width: 1000px; width: 100%; display: flex; min-height: 600px; }
+        .left-section { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 60px 40px; color: white; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .logo { width: 150px; height: 150px; margin-bottom: 30px; animation: float 3s ease-in-out infinite; object-fit: contain; }
+        .logo-fallback { width: 150px; height: 150px; margin-bottom: 30px; background: rgba(255,255,255,0.2); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 4rem; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        .brand-title { font-size: 2.5rem; font-weight: 700; margin-bottom: 15px; }
+        .brand-subtitle { font-size: 1.1rem; opacity: 0.9; }
+        .right-section { flex: 1; padding: 60px 50px; display: flex; flex-direction: column; justify-content: center; }
+        .form-header { margin-bottom: 40px; }
+        .form-header h2 { font-size: 2rem; color: #2c3e50; margin-bottom: 10px; }
+        .form-header p { color: #6c757d; font-size: 1rem; }
+        .form-group { margin-bottom: 25px; }
+        .form-label { display: block; margin-bottom: 8px; color: #495057; font-weight: 500; font-size: 0.95rem; }
+        .form-input { width: 100%; padding: 14px 16px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem; transition: all 0.3s; }
+        .form-input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 4px rgba(102,126,234,0.1); }
+        .form-input.error { border-color: #dc3545; }
+        .password-wrapper { position: relative; width: 100%; }
+        .password-wrapper .form-input { padding-right: 50px; }
+        .toggle-password { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #6c757d; font-size: 1.2rem; padding: 4px; display: flex; align-items: center; justify-content: center; transition: color 0.3s; }
+        .toggle-password:hover { color: #667eea; }
+        .toggle-password svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 1.05rem; font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102,126,234,0.4); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .form-links { margin-top: 20px; text-align: center; }
+        .form-links a { color: #667eea; text-decoration: none; font-weight: 500; transition: color 0.3s; }
+        .form-links a:hover { color: #764ba2; }
+        .divider { margin: 20px 0; text-align: center; color: #adb5bd; }
+        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; display: none; }
+        .alert.show { display: block; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading-msg { text-align: center; padding: 10px; color: #667eea; font-size: 0.875rem; display: none; }
+        .loading-msg.show { display: block; }
+        .loading-msg.error-state { color: #dc3545; }
+        .not-registered-banner { display: none; background: linear-gradient(135deg, #fff8e1 0%, #fff3cd 100%); border: 2px solid #ffc107; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center; }
+        .not-registered-banner.show { display: block; animation: slideDown 0.3s ease; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .not-registered-banner .banner-icon { font-size: 2.2rem; margin-bottom: 8px; }
+        .not-registered-banner .banner-title { font-size: 1.05rem; font-weight: 700; color: #856404; margin-bottom: 6px; }
+        .not-registered-banner .banner-subtitle { font-size: 0.875rem; color: #6d5100; margin-bottom: 14px; line-height: 1.5; }
+        .not-registered-banner .banner-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .not-registered-banner .btn-create { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: opacity 0.2s, transform 0.2s; }
+        .not-registered-banner .btn-create:hover { opacity: 0.9; transform: translateY(-1px); }
+        .not-registered-banner .btn-dismiss { display: inline-block; background: transparent; color: #856404; padding: 10px 18px; border-radius: 8px; border: 2px solid #ffc107; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: background 0.2s; font-family: inherit; }
+        .not-registered-banner .btn-dismiss:hover { background: rgba(255,193,7,0.15); }
+        .retry-btn { display: inline-block; margin-top: 8px; padding: 6px 16px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-family: inherit; }
+        .retry-btn:hover { background: #764ba2; }
+        @media (max-width: 768px) { .auth-container { flex-direction: column; } .left-section { padding: 40px 30px; } .logo { width: 100px; height: 100px; } .brand-title { font-size: 2rem; } .right-section { padding: 40px 30px; } }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="left-section">
+            <img src="dashtoon_logo.jpg" alt="Dashverse Logo" class="logo"
+                 onerror="this.style.display='none';document.getElementById('logoFallback').style.display='flex';">
+            <div class="logo-fallback" id="logoFallback" style="display:none;">🎬</div>
+            <h1 class="brand-title">Dashverse</h1>
+            <p class="brand-subtitle">Content Management Platform</p>
+        </div>
+
+        <div class="right-section">
+            <div class="form-header">
+                <h2>Welcome Back</h2>
+                <p>Sign in to your account to continue</p>
+            </div>
+
+            <div class="loading-msg" id="loadingMsg">⏳ Connecting to server...</div>
+            <div class="alert alert-error" id="errorAlert" role="alert" aria-live="polite"></div>
+
+            <div class="not-registered-banner" id="notRegisteredBanner" role="alert">
+                <div class="banner-icon" id="bannerIcon">🚫</div>
+                <div class="banner-title" id="bannerTitle">No Account Found</div>
+                <div class="banner-subtitle" id="bannerSubtitle">
+                    This email is not registered in Dashverse.
+                    Please create a new account to get started.
+                </div>
+                <div class="banner-actions">
+                    <a href="signup.html" class="btn-create">➕ Create Account</a>
+                    <button type="button" class="btn-dismiss" id="dismissBanner">✖ Dismiss</button>
+                </div>
+            </div>
+
+            <form id="loginForm" autocomplete="on" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Address</label>
+                    <input type="email" class="form-input" id="email"
+                           placeholder="your@email.com" required
+                           autocomplete="email" maxlength="254">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" class="form-input" id="password"
+                               placeholder="Enter your password" required
+                               autocomplete="current-password" maxlength="128">
+                        <button type="button" class="toggle-password" id="togglePassword"
+                                aria-label="Toggle password visibility">
+                            <svg id="eyeIcon" viewBox="0 0 24 24">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <svg id="eyeOffIcon" viewBox="0 0 24 24" style="display:none;">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" id="loginBtn" disabled>Sign In</button>
+            </form>
+
+            <div class="form-links">
+                <a href="forgot-password.html">Forgot your password?</a>
+            </div>
+            <div class="divider">─────── or ───────</div>
+            <div class="form-links">
+                Don't have an account? <a href="signup.html">Create Account</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Password toggle — pure UI, no module needed
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            var input    = document.getElementById('password');
+            var isPass   = input.type === 'password';
+            input.type   = isPass ? 'text' : 'password';
+            document.getElementById('eyeIcon').style.display    = isPass ? 'none'  : 'block';
+            document.getElementById('eyeOffIcon').style.display = isPass ? 'block' : 'none';
+            this.setAttribute('aria-label', isPass ? 'Hide password' : 'Show password');
+        });
+        document.getElementById('dismissBanner').addEventListener('click', function() {
+            document.getElementById('notRegisteredBanner').classList.remove('show');
+            document.getElementById('email').classList.remove('error');
+        });
+    </script>
+
+    <script type="module">
+    import {
+        auth, db, ensureInitialized,
+        signInWithEmailAndPassword,
+        doc, getDoc, setDoc, serverTimestamp,
+        SecureSession, RateLimiter, isValidEmail, sanitizeInput
+    } from './firebase.js';
+
+    const loginLimiter = new RateLimiter(5, 5 * 60 * 1000, 'login');
+    let firebaseReady  = false;
+
+    function showError(message) {
+        hideAllAlerts();
+        const alertEl     = document.getElementById('errorAlert');
+        alertEl.textContent = message;
+        alertEl.classList.add('show');
+        setTimeout(() => alertEl.classList.remove('show'), 8000);
+    }
+
+    function showBanner(icon, title, subtitle) {
+        hideAllAlerts();
+        document.getElementById('bannerIcon').textContent     = icon;
+        document.getElementById('bannerTitle').textContent    = title;
+        document.getElementById('bannerSubtitle').textContent = subtitle;
+        document.getElementById('email').classList.add('error');
+        document.getElementById('notRegisteredBanner').classList.add('show');
+    }
+
+    function hideAllAlerts() {
+        document.getElementById('errorAlert').classList.remove('show');
+        document.getElementById('notRegisteredBanner').classList.remove('show');
+        document.getElementById('email').classList.remove('error');
+    }
+
+    async function waitForFirebase() {
+        const loadingMsg = document.getElementById('loadingMsg');
+        const loginBtn   = document.getElementById('loginBtn');
+        loadingMsg.classList.add('show');
+        loadingMsg.classList.remove('error-state');
+        loadingMsg.textContent = '⏳ Connecting to server...';
+        loginBtn.disabled = true;
+
+        try {
+            await ensureInitialized();
+            firebaseReady     = true;
+            loadingMsg.classList.remove('show');
+            loginBtn.disabled = false;
+            console.log('[Login] Firebase ready ✅');
+        } catch (e) {
+            console.error('[Login] Firebase init failed:', e.message);
+            loadingMsg.classList.add('error-state');
+            loadingMsg.innerHTML = `❌ Failed to connect: ${e.message}<br>
+                <button class="retry-btn" onclick="location.reload()">🔄 Retry</button>`;
+        }
+    }
+
+    waitForFirebase();
+
+    function getCollectionName(email) {
+        return email.endsWith('@dashverse.ai') ? 'admins' : 'writers';
+    }
+
+    async function updateLastLogin(userId, email) {
+        try {
+            const col = getCollectionName(email);
+            await setDoc(doc(db, col, userId), {
+                lastLogin:     serverTimestamp(),
+                emailVerified: true,
+            }, { merge: true });
+        } catch (e) {
+            console.warn('[Login] updateLastLogin failed:', e.message);
+        }
+    }
+
+    async function getUserData(userId, email) {
+        try {
+            const col      = getCollectionName(email);
+            const userSnap = await getDoc(doc(db, col, userId));
+            return userSnap.exists() ? userSnap.data() : null;
+        } catch (e) {
+            console.warn('[Login] getUserData failed:', e.message);
+            return null;
+        }
+    }
+
+    document.getElementById('email').addEventListener('input', hideAllAlerts);
+    document.getElementById('password').addEventListener('input', () => {
+        document.getElementById('errorAlert').classList.remove('show');
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideAllAlerts();
+
+        if (!firebaseReady) {
+            showError('Still connecting to server. Please wait and try again.');
+            return;
+        }
+
+        if (!loginLimiter.canProceed()) {
+            const wait = Math.ceil(loginLimiter.getWaitTime() / 1000);
+            showError(`Too many login attempts. Please wait ${wait} seconds.`);
+            return;
+        }
+
+        const rawEmail    = document.getElementById('email').value;
+        const rawPassword = document.getElementById('password').value;
+        const email       = sanitizeInput(rawEmail, 254).toLowerCase();
+        const password    = rawPassword.substring(0, 128);
+        const loginBtn    = document.getElementById('loginBtn');
+
+        if (!email || !isValidEmail(email)) {
+            showError('Please enter a valid email address.');
+            return;
+        }
+        if (!password || password.length < 6) {
+            showError('Please enter your password.');
+            return;
+        }
+
+        loginBtn.disabled    = true;
+        loginBtn.textContent = 'Signing in...';
+
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user           = userCredential.user;
+
+            if (!user.emailVerified) {
+                showError('Please verify your email before logging in. Check your inbox.');
+                await auth.signOut();
+                loginBtn.disabled    = false;
+                loginBtn.textContent = 'Sign In';
+                return;
+            }
+
+            const userData = await getUserData(user.uid, email);
+            if (!userData) {
+                await auth.signOut();
+                showBanner('⚠️', 'Account Not Set Up',
+                    'Your account is not fully configured. Please create a new account to get started.');
+                loginBtn.disabled    = false;
+                loginBtn.textContent = 'Sign In';
+                return;
+            }
+
+            await updateLastLogin(user.uid, email);
+
+            SecureSession.createSession(user.uid);
+            SecureSession.setUserData({
+                uid:   user.uid,
+                name:  userData.name || email.split('@')[0],
+                email: email,
+                role:  email.endsWith('@dashverse.ai') ? 'admin' : 'writer',
+            });
+
+            window.location.replace(
+                email.endsWith('@dashverse.ai')
+                    ? 'admin-dashboard.html'
+                    : 'writer-dashboard.html'
+            );
+
+        } catch (error) {
+            console.error('[Login] Sign-in error:', error.code, error.message);
+            loginBtn.disabled    = false;
+            loginBtn.textContent = 'Sign In';
+
+            switch (error.code) {
+                case 'auth/user-not-found':
+                    showBanner('🚫', 'No Account Found',
+                        'This email is not registered. Please create a new account.');
+                    break;
+                case 'auth/invalid-credential':
+                case 'auth/invalid-login-credentials':
+                case 'auth/wrong-password':
+                    showBanner('❌', 'Sign In Failed',
+                        'Email or password is incorrect. Please check and try again.');
+                    break;
+                case 'auth/too-many-requests':
+                    showError('Too many failed attempts. Please wait a few minutes.');
+                    break;
+                case 'auth/network-request-failed':
+                    showError('Network error. Please check your internet connection.');
+                    break;
+                case 'auth/user-disabled':
+                    showError('This account has been disabled. Please contact support.');
+                    break;
+                default:
+                    showError(`Sign in failed (${error.code || 'unknown'}). Please try again.`);
+                    break;
+            }
+        }
+    });
+    </script>
+</body>
+</html>

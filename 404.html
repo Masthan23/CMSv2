@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashverse</title>
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline';">
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center;
+               align-items: center; min-height: 100vh; margin: 0;
+               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+               color: white; text-align: center; }
+    </style>
+</head>
+<body>
+    <div>
+        <h2>Redirecting to Dashverse...</h2>
+        <p><a href="login.html" style="color:white;">Click here if not redirected</a></p>
+    </div>
+    <script>
+        (function() {
+            var path = window.location.pathname;
+            var validPages = [
+                '/login.html', '/signup.html', '/verify-email.html',
+                '/forgot-password.html', '/admin-dashboard.html', '/writer-dashboard.html'
+            ];
+            var found = validPages.some(function(p) { return path.endsWith(p); });
+            if (!found) {
+                window.location.replace('login.html');
+            }
+        })();
+    </script>
+</body>
+</html>

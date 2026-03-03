@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writer Dashboard - Dashverse</title>
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: #2c3e50; }
+        .navbar { background: rgba(255,255,255,0.98); backdrop-filter: blur(10px); padding: 1rem 2.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(102,126,234,0.1); box-shadow: 0 2px 20px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
+        .navbar-brand { display: flex; align-items: center; gap: 1rem; }
+        .navbar-brand img { width: 42px; height: 42px; border-radius: 8px; object-fit: cover; }
+        .navbar-title { font-size: 1.375rem; font-weight: 600; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .navbar-actions { display: flex; align-items: center; gap: 1.5rem; }
+        .user-badge { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1.25rem; background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%); border-radius: 50px; border: 1px solid rgba(102,126,234,0.2); }
+        .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem; flex-shrink: 0; }
+        .user-name { font-weight: 500; color: #495057; }
+        .writer-badge { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+        .btn-logout { padding: 0.625rem 1.5rem; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.9375rem; transition: all 0.3s; white-space: nowrap; }
+        .btn-logout:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245,87,108,0.4); }
+        .main-container { max-width: 1400px; margin: 0 auto; padding: 2rem 2.5rem; }
+        .page-header { background: rgba(255,255,255,0.95); padding: 2.5rem; border-radius: 16px; margin-bottom: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.3); }
+        .page-header h1 { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem; }
+        .page-header p { color: #6c757d; font-size: 1.0625rem; }
+        .notification { padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; display: none; border: 1px solid; align-items: center; gap: 0.75rem; font-size: 0.9375rem; }
+        .notification.show { display: flex; }
+        .notification-success { background: rgba(40,167,69,0.1); border-color: rgba(40,167,69,0.3); color: #155724; }
+        .notification-error   { background: rgba(220,53,69,0.1);  border-color: rgba(220,53,69,0.3);  color: #721c24; }
+        .notification-info    { background: rgba(102,126,234,0.1); border-color: rgba(102,126,234,0.3); color: #004085; }
+        .notification-icon    { font-size: 1.125rem; flex-shrink: 0; }
+        .notification-close   { margin-left: auto; background: none; border: none; font-size: 1.25rem; cursor: pointer; opacity: 0.5; padding: 0 0.25rem; color: inherit; flex-shrink: 0; }
+        .notification-close:hover { opacity: 1; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: rgba(255,255,255,0.95); padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); transition: all 0.3s; border: 1px solid rgba(255,255,255,0.3); }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+        .stat-label { color: #6c757d; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; }
+        .stat-value { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .card { background: rgba(255,255,255,0.95); border-radius: 16px; margin-bottom: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid rgba(255,255,255,0.3); }
+        .card-header { padding: 1.75rem 2rem; background: linear-gradient(135deg, rgba(102,126,234,0.05) 0%, rgba(118,75,162,0.05) 100%); border-bottom: 1px solid rgba(102,126,234,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .card-title { font-size: 1.375rem; font-weight: 600; color: #2c3e50; }
+        .card-body { padding: 2rem; }
+        .btn { padding: 0.75rem 1.75rem; border: none; border-radius: 10px; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; white-space: nowrap; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; box-shadow: 0 4px 15px rgba(102,126,234,0.4); }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102,126,234,0.5); }
+        .btn-secondary { background: rgba(108,117,125,0.1); color: #495057; border: 2px solid rgba(108,117,125,0.2); }
+        .btn-secondary:hover:not(:disabled) { background: rgba(108,117,125,0.18); border-color: rgba(108,117,125,0.35); }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.8125rem; border-radius: 8px; }
+        .show-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+        .show-card { background: linear-gradient(135deg, rgba(102,126,234,0.04) 0%, rgba(118,75,162,0.04) 100%); border: 2px solid rgba(102,126,234,0.18); border-radius: 14px; padding: 1.5rem; cursor: pointer; transition: all 0.3s; }
+        .show-card:hover { border-color: #667eea; transform: translateY(-4px); box-shadow: 0 10px 28px rgba(102,126,234,0.18); }
+        .show-card.selected { border-color: #667eea; background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%); box-shadow: 0 8px 24px rgba(102,126,234,0.2); }
+        .show-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 0.75rem; }
+        .show-id-badge { font-family: 'Courier New', monospace; font-weight: 700; color: #667eea; background: rgba(102,126,234,0.15); padding: 0.25rem 0.75rem; border-radius: 6px; font-size: 0.8125rem; white-space: nowrap; flex-shrink: 0; }
+        .show-name { font-size: 1.0625rem; font-weight: 700; color: #2c3e50; margin-bottom: 0.75rem; }
+        .show-working-name { font-size: 0.8125rem; color: #6c757d; margin-bottom: 0.75rem; }
+        .show-details { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem; }
+        .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 0.375rem 0; border-bottom: 1px solid rgba(102,126,234,0.06); }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { font-weight: 600; color: #6c757d; font-size: 0.8125rem; }
+        .detail-value { color: #2c3e50; font-weight: 500; text-align: right; }
+        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+        .status-assets-shared              { background: rgba(13,202,240,0.15);  color: #055160; }
+        .status-localization-notes-received{ background: rgba(111,66,193,0.15);  color: #3d1a7a; }
+        .status-localization-discussion-wip{ background: rgba(255,193,7,0.15);   color: #856404; }
+        .status-localization-completed     { background: rgba(40,167,69,0.15);   color: #155724; }
+        .status-scripting-wip              { background: rgba(255,152,0,0.15);   color: #7a4100; }
+        .status-draft1-partial             { background: rgba(102,126,234,0.15); color: #3d4eac; }
+        .status-draft1-all                 { background: rgba(23,162,184,0.15);  color: #0c5460; }
+        .status-completed                  { background: rgba(40,167,69,0.2);    color: #155724; }
+        .status-paused                     { background: rgba(220,53,69,0.15);   color: #721c24; }
+        .status-default                    { background: rgba(108,117,125,0.15); color: #495057; }
+        .payment-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .payment-pending   { background: rgba(220,53,69,0.12);  color: #721c24; }
+        .payment-completed { background: rgba(40,167,69,0.12);  color: #155724; }
+        .payment-empty     { background: rgba(108,117,125,0.08); color: #6c757d; }
+        .locked-section { background: linear-gradient(135deg, rgba(102,126,234,0.03) 0%, rgba(118,75,162,0.03) 100%); border: 1px solid rgba(102,126,234,0.12); border-radius: 14px; padding: 1.5rem; margin-bottom: 2rem; }
+        .locked-section-title { font-size: 1rem; font-weight: 700; color: #495057; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+        .locked-section-title .hint { font-size: 0.75rem; color: #adb5bd; font-weight: 400; }
+        .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.875rem; }
+        .field-item { display: flex; justify-content: space-between; align-items: center; padding: 0.875rem 1rem; background: white; border-radius: 10px; border: 1px solid rgba(102,126,234,0.1); gap: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+        .field-label { font-weight: 600; color: #495057; font-size: 0.8125rem; white-space: nowrap; flex-shrink: 0; }
+        .field-value { color: #2c3e50; font-size: 0.875rem; text-align: right; word-break: break-word; }
+        .admin-locked-section { background: linear-gradient(135deg, rgba(255,193,7,0.04) 0%, rgba(255,152,0,0.04) 100%); border: 1px solid rgba(255,193,7,0.2); border-radius: 14px; padding: 1.5rem; margin-bottom: 2rem; }
+        .admin-locked-title { font-size: 1rem; font-weight: 700; color: #856404; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+        .admin-locked-title .hint { font-size: 0.75rem; color: #adb5bd; font-weight: 400; }
+        .admin-field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+        .admin-field-item { background: white; border: 1px solid rgba(255,193,7,0.15); border-radius: 12px; padding: 1rem 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+        .admin-field-label { font-size: 0.8125rem; font-weight: 700; color: #495057; margin-bottom: 0.625rem; display: flex; align-items: center; gap: 0.375rem; }
+        .admin-field-value { display: flex; align-items: center; min-height: 32px; }
+        .locked-field-label { display: block; margin-bottom: 0.5rem; color: #495057; font-weight: 600; font-size: 0.9375rem; }
+        .lock-icon { font-size: 0.7rem; opacity: 0.5; margin-left: 0.25rem; }
+        .locked-field-display { display: flex; align-items: center; gap: 0.625rem; padding: 0.875rem 1rem; background: #f8f9fa; border: 2px solid rgba(108,117,125,0.15); border-radius: 10px; min-height: 52px; transition: border-color 0.2s; }
+        .locked-field-display:hover { border-color: rgba(108,117,125,0.3); }
+        .locked-field-text { flex: 1; font-size: 0.875rem; color: #2c3e50; word-break: break-all; line-height: 1.4; }
+        .locked-field-text.empty  { color: #adb5bd; font-style: italic; }
+        .locked-field-text.is-link { color: #667eea; }
+        .locked-field-actions { display: flex; gap: 0.375rem; flex-shrink: 0; }
+        .btn-locked-action { padding: 0.375rem 0.625rem; border: none; border-radius: 7px; cursor: pointer; font-size: 0.75rem; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap; }
+        .btn-locked-copy { background: rgba(102,126,234,0.1); color: #667eea; }
+        .btn-locked-copy:hover:not(:disabled) { background: rgba(102,126,234,0.2); }
+        .btn-locked-copy.copied { background: rgba(40,167,69,0.15); color: #155724; }
+        .btn-locked-open { background: rgba(40,167,69,0.1); color: #28a745; }
+        .btn-locked-open:hover:not(:disabled) { background: rgba(40,167,69,0.2); }
+        .btn-locked-action:disabled { opacity: 0.35; cursor: not-allowed; }
+        .section-divider { border: none; border-top: 2px dashed rgba(102,126,234,0.15); margin: 2rem 0; }
+        .form-section-title { font-size: 1.125rem; font-weight: 700; color: #2c3e50; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid rgba(102,126,234,0.12); display: flex; align-items: center; gap: 0.5rem; }
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .form-field { margin-bottom: 1.5rem; }
+        .form-label { display: block; margin-bottom: 0.5rem; color: #495057; font-weight: 600; font-size: 0.9375rem; }
+        .form-label .optional { color: #6c757d; font-weight: 400; font-size: 0.8125rem; }
+        .form-input { width: 100%; padding: 0.875rem 1rem; border: 2px solid rgba(102,126,234,0.2); border-radius: 10px; font-size: 0.9375rem; font-family: inherit; transition: all 0.3s; background: white; color: #2c3e50; }
+        .form-input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 4px rgba(102,126,234,0.1); }
+        .form-input::placeholder { color: #adb5bd; }
+        .form-input.error { border-color: #dc3545; box-shadow: 0 0 0 3px rgba(220,53,69,0.1); }
+        .form-hint { font-size: 0.75rem; color: #6c757d; margin-top: 0.375rem; }
+        .form-actions { margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1.5rem; border-top: 1px solid rgba(102,126,234,0.1); flex-wrap: wrap; }
+        .loading-overlay { text-align: center; padding: 3rem 2rem; color: #667eea; }
+        .spinner { border: 3px solid rgba(102,126,234,0.2); border-top: 3px solid #667eea; border-radius: 50%; width: 48px; height: 48px; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .empty-state { text-align: center; padding: 4rem 2rem; color: #6c757d; }
+        .empty-state-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.25; }
+        .empty-state h3 { font-size: 1.25rem; color: #495057; margin-bottom: 0.5rem; font-weight: 700; }
+        .empty-state p { font-size: 0.9375rem; max-width: 400px; margin: 0 auto; line-height: 1.6; }
+        .remarks-wrapper { border-radius: 16px; overflow: hidden; border: 1px solid rgba(102,126,234,0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.06); background: #fff; }
+        .remarks-topbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .remarks-topbar-left { display: flex; align-items: center; gap: 0.875rem; }
+        .remarks-topbar-icon { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 1.125rem; flex-shrink: 0; }
+        .remarks-topbar-title { font-size: 1rem; font-weight: 700; color: white; }
+        .remarks-topbar-sub { font-size: 0.6875rem; color: rgba(255,255,255,0.65); margin-top: 1px; }
+        .remarks-count-pill { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 20px; display: flex; align-items: center; gap: 0.375rem; }
+        .remarks-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #7effa0; animation: blink-live 1.8s ease-in-out infinite; flex-shrink: 0; }
+        @keyframes blink-live { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+        .remarks-messages { background: #f5f6fa; padding: 1.25rem 1rem 0.875rem; min-height: 200px; max-height: 460px; overflow-y: auto; }
+        .remarks-messages::-webkit-scrollbar { width: 5px; }
+        .remarks-messages::-webkit-scrollbar-track { background: transparent; }
+        .remarks-messages::-webkit-scrollbar-thumb { background: rgba(102,126,234,0.25); border-radius: 4px; }
+        .remarks-messages::-webkit-scrollbar-thumb:hover { background: rgba(102,126,234,0.45); }
+        .remarks-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 1rem; gap: 0.5rem; }
+        .remarks-empty-icon { font-size: 3rem; opacity: 0.2; }
+        .remarks-empty-text { font-size: 0.9rem; color: #adb5bd; font-weight: 600; }
+        .remarks-empty-sub  { font-size: 0.8125rem; color: #ced4da; }
+        .remarks-date-sep { display: flex; align-items: center; gap: 0.625rem; margin: 0.875rem 0 0.625rem; }
+        .remarks-date-sep::before,.remarks-date-sep::after { content:''; flex:1; height:1px; background: #e2e5ee; }
+        .remarks-date-label { font-size: 0.625rem; font-weight: 700; color: #adb5bd; text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; }
+        .remarks-inner { display: flex; flex-direction: column; gap: 0.625rem; }
+        .msg-row { display: flex; align-items: flex-end; gap: 0.625rem; }
+        .msg-row.from-admin  { flex-direction: row; }
+        .msg-row.from-writer { flex-direction: row-reverse; }
+        .msg-avatar { width: 30px; height: 30px; border-radius: 50%; font-size: 0.6875rem; font-weight: 800; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .msg-row.from-admin  .msg-avatar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .msg-row.from-writer .msg-avatar { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .msg-group { display: flex; flex-direction: column; max-width: 70%; gap: 0.2rem; }
+        .msg-row.from-admin  .msg-group { align-items: flex-start; }
+        .msg-row.from-writer .msg-group { align-items: flex-end; }
+        .msg-sender-name { font-size: 0.6875rem; font-weight: 700; color: #868e96; padding: 0 0.375rem; }
+        .msg-bubble { padding: 0.625rem 1rem; border-radius: 18px; font-size: 0.875rem; line-height: 1.55; word-wrap: break-word; white-space: pre-wrap; }
+        .msg-row.from-admin  .msg-bubble { background: white; color: #2c3e50; border: 1px solid #e9ecef; border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .msg-row.from-writer .msg-bubble { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-bottom-right-radius: 4px; box-shadow: 0 2px 10px rgba(102,126,234,0.3); }
+        .msg-time { font-size: 0.5625rem; color: #ced4da; padding: 0 0.375rem; }
+        .msg-row.from-writer .msg-time { color: rgba(102,126,234,0.45); text-align: right; }
+        .remarks-input-zone { background: white; border-top: 1px solid #e9ecef; padding: 0.875rem 1rem; display: flex; align-items: flex-end; gap: 0.75rem; }
+        .remarks-input-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; font-size: 0.8125rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .remarks-textarea { flex: 1; background: #f5f6fa; border: 1.5px solid #e2e5ee; border-radius: 22px; padding: 0.625rem 1rem; font-size: 0.875rem; font-family: inherit; resize: none; min-height: 42px; max-height: 120px; line-height: 1.5; color: #2c3e50; transition: border-color 0.2s, background 0.2s; }
+        .remarks-textarea::placeholder { color: #adb5bd; }
+        .remarks-textarea:focus { outline: none; border-color: #667eea; background: white; box-shadow: 0 0 0 3px rgba(102,126,234,0.08); }
+        .remarks-send-btn { width: 42px; height: 42px; border-radius: 50%; border: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; box-shadow: 0 3px 12px rgba(102,126,234,0.4); }
+        .remarks-send-btn:hover:not(:disabled) { transform: scale(1.08); box-shadow: 0 5px 18px rgba(102,126,234,0.55); }
+        .remarks-send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+        .remarks-hint-bar { background: #fafbff; border-top: 1px solid #f0f1f8; padding: 0.4rem 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .remarks-hint  { font-size: 0.5625rem; color: #ced4da; }
+        .remarks-char  { font-size: 0.5625rem; color: #ced4da; font-family: 'Courier New', monospace; }
+        .remarks-char.warn  { color: #f4a523; }
+        .remarks-char.limit { color: #dc3545; font-weight: 700; }
+        .permission-banner { display: none; align-items: flex-start; gap: 1rem; padding: 1.25rem 1.5rem; background: linear-gradient(135deg, rgba(220,53,69,0.08) 0%, rgba(245,87,108,0.08) 100%); border: 2px solid rgba(220,53,69,0.25); border-radius: 12px; margin-bottom: 1.5rem; }
+        .permission-banner.show { display: flex; }
+        .permission-banner-icon { font-size: 1.75rem; flex-shrink: 0; }
+        .permission-banner-text h4 { font-size: 1rem; font-weight: 700; color: #721c24; margin-bottom: 0.375rem; }
+        .permission-banner-text p  { font-size: 0.875rem; color: #721c24; opacity: 0.85; line-height: 1.5; }
+        .permission-banner-text code { background: rgba(220,53,69,0.12); padding: 0.125rem 0.375rem; border-radius: 4px; font-size: 0.8125rem; }
+        .confirm-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); }
+        .confirm-modal.show { display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+        .confirm-content { background: white; border-radius: 16px; width: 90%; max-width: 680px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+        .confirm-header { padding: 1.5rem 2rem; background: linear-gradient(135deg, rgba(40,167,69,0.08) 0%, rgba(32,201,151,0.08) 100%); border-bottom: 2px solid rgba(40,167,69,0.2); display: flex; align-items: center; gap: 1rem; }
+        .confirm-header-icon { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+        .confirm-header-text h3 { font-size: 1.125rem; font-weight: 700; color: #2c3e50; margin-bottom: 0.25rem; }
+        .confirm-header-text p  { font-size: 0.875rem; color: #6c757d; }
+        .confirm-body { padding: 1.5rem 2rem; max-height: 55vh; overflow-y: auto; }
+        .confirm-show-info { display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: linear-gradient(135deg, rgba(102,126,234,0.05) 0%, rgba(118,75,162,0.05) 100%); border-radius: 10px; margin-bottom: 1.25rem; border: 1px solid rgba(102,126,234,0.15); flex-wrap: wrap; }
+        .confirm-show-code { font-family: 'Courier New', monospace; font-weight: 700; color: #667eea; background: rgba(102,126,234,0.15); padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 0.875rem; }
+        .confirm-show-name { font-weight: 600; color: #2c3e50; font-size: 0.9375rem; }
+        .confirm-section-title { font-size: 0.8125rem; font-weight: 700; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(102,126,234,0.1); }
+        .confirm-changes-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
+        .confirm-change-row { display: grid; grid-template-columns: 150px 1fr; gap: 0.75rem; padding: 0.625rem 0.875rem; border-radius: 8px; font-size: 0.875rem; align-items: start; }
+        .confirm-change-row:nth-child(odd) { background: rgba(102,126,234,0.03); }
+        .confirm-change-row.changed { background: rgba(40,167,69,0.06); border-left: 3px solid #28a745; }
+        .confirm-change-field { font-weight: 700; color: #495057; font-size: 0.8125rem; }
+        .confirm-change-value { color: #2c3e50; word-break: break-word; }
+        .confirm-change-value.is-link { color: #667eea; font-size: 0.8125rem; word-break: break-all; }
+        .confirm-change-diff { display: flex; flex-direction: column; gap: 0.3rem; }
+        .confirm-old-value { color: #dc3545; text-decoration: line-through; font-size: 0.8125rem; opacity: 0.75; }
+        .confirm-new-value { color: #28a745; font-weight: 600; }
+        .confirm-new-value.is-link { color: #667eea; font-size: 0.8125rem; word-break: break-all; }
+        .confirm-no-changes { text-align: center; padding: 2rem 1rem; color: #6c757d; }
+        .confirm-no-changes-icon { font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.35; }
+        .confirm-summary { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; background: rgba(40,167,69,0.08); border: 1px solid rgba(40,167,69,0.2); border-radius: 8px; margin-bottom: 1.25rem; font-size: 0.875rem; color: #155724; }
+        .confirm-footer { padding: 1.25rem 2rem; border-top: 2px solid rgba(40,167,69,0.15); display: flex; justify-content: flex-end; gap: 1rem; flex-wrap: wrap; }
+        .btn-confirm-cancel { padding: 0.75rem 1.75rem; background: rgba(108,117,125,0.1); color: #495057; border: 2px solid rgba(108,117,125,0.2); border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.9375rem; transition: all 0.2s; }
+        .btn-confirm-cancel:hover { background: rgba(108,117,125,0.18); }
+        .btn-confirm-save { padding: 0.75rem 1.75rem; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.9375rem; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 15px rgba(40,167,69,0.4); }
+        .btn-confirm-save:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(40,167,69,0.5); }
+        .btn-confirm-save:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+        @media (max-width: 768px) {
+            .main-container { padding: 1.5rem 1rem; }
+            .navbar { padding: 1rem 1.5rem; flex-wrap: wrap; gap: 0.75rem; }
+            .navbar-actions { flex-wrap: wrap; gap: 0.75rem; }
+            .show-cards-grid { grid-template-columns: 1fr; }
+            .field-grid,.admin-field-grid,.form-row { grid-template-columns: 1fr; }
+            .form-actions { flex-direction: column-reverse; }
+            .form-actions .btn { width: 100%; justify-content: center; }
+            .confirm-content { width: 95%; }
+            .confirm-change-row { grid-template-columns: 1fr; }
+            .confirm-footer { flex-direction: column-reverse; }
+            .confirm-footer .btn-confirm-save,
+            .confirm-footer .btn-confirm-cancel { width: 100%; justify-content: center; }
+            .msg-group { max-width: 82%; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-brand">
+        <img src="dashtoon_logo.jpg" alt="Dashverse" loading="lazy">
+        <span class="navbar-title">Dashverse Writer Portal</span>
+    </div>
+    <div class="navbar-actions">
+        <div class="user-badge">
+            <div class="user-avatar" id="userAvatar">W</div>
+            <span class="user-name" id="userName">Writer</span>
+            <span class="writer-badge">WRITER</span>
+        </div>
+        <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+</nav>
+
+<div class="main-container">
+    <div class="page-header">
+        <h1>Welcome back, <span id="welcomeName">Writer</span>! 👋</h1>
+        <p>Manage your assigned shows, submit drafts, and track your progress</p>
+    </div>
+
+    <div class="notification notification-success" id="successNotification">
+        <span class="notification-icon">✅</span>
+        <span id="successText"></span>
+        <button class="notification-close" onclick="hideNotification('success')">×</button>
+    </div>
+    <div class="notification notification-error" id="errorNotification">
+        <span class="notification-icon">❌</span>
+        <span id="errorText"></span>
+        <button class="notification-close" onclick="hideNotification('error')">×</button>
+    </div>
+    <div class="notification notification-info" id="infoNotification">
+        <span class="notification-icon">ℹ️</span>
+        <span id="infoText"></span>
+        <button class="notification-close" onclick="hideNotification('info')">×</button>
+    </div>
+
+    <div class="permission-banner" id="permissionBanner">
+        <div class="permission-banner-icon">🔒</div>
+        <div class="permission-banner-text">
+            <h4>Permission Issue Detected</h4>
+            <p>Your writes are being rejected by the database. Error: <code id="permissionErrorCode">permission-denied</code></p>
+        </div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid" style="display:none;">
+        <div class="stat-card">
+            <div class="stat-label">📋 Assigned Shows</div>
+            <div class="stat-value" id="assignedShowsCount">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">✍️ Scripting WIP</div>
+            <div class="stat-value" id="inProgressCount">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">✅ Completed</div>
+            <div class="stat-value" id="completedCount">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">🎬 Approved Episodes</div>
+            <div class="stat-value" id="totalEpisodesCount">0</div>
+        </div>
+    </div>
+
+    <div class="card" id="showSelectionCard">
+        <div class="card-header">
+            <h2 class="card-title">📺 Your Assigned Shows</h2>
+            <span id="showCountBadge" style="font-size:0.875rem;color:#6c757d;"></span>
+        </div>
+        <div class="card-body">
+            <div id="showsContainer">
+                <div class="loading-overlay">
+                    <div class="spinner"></div>
+                    <p>Loading your shows…</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" id="showEditorCard" style="display:none;">
+        <div class="card-header">
+            <h2 class="card-title" id="editorShowTitle">Show Details</h2>
+            <button class="btn btn-secondary btn-sm" onclick="backToSelection()">← Back to Shows</button>
+        </div>
+        <div class="card-body">
+
+            <div class="locked-section">
+                <div class="locked-section-title">
+                    🔒 Show Information
+                    <span class="hint">— Read only, managed by admin</span>
+                </div>
+                <div class="field-grid" id="lockedFieldsGrid"></div>
+            </div>
+
+            <div class="admin-locked-section">
+                <div class="admin-locked-title">
+                    🔒 Status, Episodes &amp; Payment
+                    <span class="hint">— Managed by admin only</span>
+                </div>
+                <div class="admin-field-grid" id="adminLockedFieldsGrid"></div>
+            </div>
+
+            <form id="updateForm" novalidate>
+                <div class="form-section-title">📁 Assets &amp; Localization</div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label class="form-label" for="showAssetsLink">Show Assets Link <span class="optional">(Optional)</span></label>
+                        <input type="text" class="form-input" id="showAssetsLink" placeholder="https://drive.google.com/… or any link" maxlength="2000">
+                        <div class="form-hint">Enter any valid link (https://, http://, drive links, etc.)</div>
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label" for="localizationNotesLink">Localization Notes Link <span class="optional">(Optional)</span></label>
+                        <input type="text" class="form-input" id="localizationNotesLink" placeholder="https://drive.google.com/… or any link" maxlength="2000">
+                        <div class="form-hint">Enter any valid link (https://, http://, drive links, etc.)</div>
+                    </div>
+                </div>
+
+                <hr class="section-divider">
+                <div class="form-section-title">📝 Screenplay Drafts</div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label class="form-label" for="screenplayDraft1">Screenplay Draft 1 <span class="optional">(Optional)</span></label>
+                        <input type="text" class="form-input" id="screenplayDraft1" placeholder="https://docs.google.com/… or any link" maxlength="2000">
+                        <div class="form-hint">Enter any valid link</div>
+                    </div>
+                    <div class="form-field">
+                        <label class="locked-field-label">Draft 1 with Comments <span class="lock-icon">🔒</span></label>
+                        <div class="locked-field-display">
+                            <span class="locked-field-text empty" id="draft1CommentsText">Not provided yet</span>
+                            <div class="locked-field-actions">
+                                <button type="button" class="btn-locked-action btn-locked-copy" id="copy-draft1Comments" disabled onclick="copyLockedField('draft1Comments','copy-draft1Comments')">📋 Copy</button>
+                                <button type="button" class="btn-locked-action btn-locked-open" id="open-draft1Comments" disabled onclick="openLockedField('draft1Comments')">🔗 Open</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label class="form-label" for="screenplayDraft2">Screenplay Draft 2 <span class="optional">(Optional)</span></label>
+                        <input type="text" class="form-input" id="screenplayDraft2" placeholder="https://docs.google.com/… or any link" maxlength="2000">
+                        <div class="form-hint">Enter any valid link</div>
+                    </div>
+                    <div class="form-field">
+                        <label class="locked-field-label">Draft 2 with Comments <span class="lock-icon">🔒</span></label>
+                        <div class="locked-field-display">
+                            <span class="locked-field-text empty" id="draft2CommentsText">Not provided yet</span>
+                            <div class="locked-field-actions">
+                                <button type="button" class="btn-locked-action btn-locked-copy" id="copy-draft2Comments" disabled onclick="copyLockedField('draft2Comments','copy-draft2Comments')">📋 Copy</button>
+                                <button type="button" class="btn-locked-action btn-locked-open" id="open-draft2Comments" disabled onclick="openLockedField('draft2Comments')">🔗 Open</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label class="form-label" for="finalScreenplayLink">Final Screenplay Link <span class="optional">(Optional)</span></label>
+                        <input type="text" class="form-input" id="finalScreenplayLink" placeholder="https://docs.google.com/… or any link" maxlength="2000">
+                        <div class="form-hint">Enter any valid link</div>
+                    </div>
+                </div>
+
+                <hr class="section-divider">
+                <div class="form-section-title">🧾 Invoice Links</div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label class="form-label" for="advanceInvoiceLink">Advance Invoice Link <span class="optional">(Optional)</span></label>
+                        <input type="text" class="form-input" id="advanceInvoiceLink" placeholder="https://drive.google.com/… or any link" maxlength="2000">
+                        <div class="form-hint">Enter any valid link</div>
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label" for="finalInvoiceLink">Final Invoice Link <span class="optional">(Optional)</span></label>
+                        <input type="text" class="form-input" id="finalInvoiceLink" placeholder="https://drive.google.com/… or any link" maxlength="2000">
+                        <div class="form-hint">Enter any valid link</div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">↩ Reset Changes</button>
+                    <button type="submit" class="btn btn-primary" id="saveButton">📝 Review &amp; Save Changes</button>
+                </div>
+            </form>
+
+            <hr class="section-divider">
+            <div class="form-section-title">💬 Remarks</div>
+            <div class="remarks-wrapper">
+                <div class="remarks-topbar">
+                    <div class="remarks-topbar-left">
+                        <div class="remarks-topbar-icon">💬</div>
+                        <div>
+                            <div class="remarks-topbar-title">Remarks</div>
+                            <div class="remarks-topbar-sub">Conversation with your admin</div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="remarks-count-pill">
+                            <div class="remarks-live-dot"></div>
+                            <span id="remarksMsgCount">0 messages</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="remarks-messages" id="remarksMessagesArea"></div>
+                <div class="remarks-input-zone">
+                    <div class="remarks-input-avatar" id="remarksInputAvatar">W</div>
+                    <textarea class="remarks-textarea" id="writerChatInput" placeholder="Write a remark…" rows="1" maxlength="1000"></textarea>
+                    <button class="remarks-send-btn" id="writerChatSendBtn" onclick="sendWriterMessage()">➤</button>
+                </div>
+                <div class="remarks-hint-bar">
+                    <span class="remarks-hint">Enter to send · Shift+Enter for new line</span>
+                    <span class="remarks-char" id="remarksCharCounter">0 / 1000</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="confirm-modal" id="confirmModal">
+    <div class="confirm-content">
+        <div class="confirm-header">
+            <div class="confirm-header-icon">📝</div>
+            <div class="confirm-header-text">
+                <h3>Review Your Changes</h3>
+                <p>Verify everything looks correct before saving.</p>
+            </div>
+        </div>
+        <div class="confirm-body" id="confirmBody"></div>
+        <div class="confirm-footer">
+            <button class="btn-confirm-cancel" onclick="closeConfirmModal()">← Go Back &amp; Edit</button>
+            <button class="btn-confirm-save" id="confirmSaveBtn">✓ Confirm &amp; Save</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+import {
+    auth, db, WORKER_URL,
+    onAuthStateChanged,
+    doc, updateDoc, getDocs,
+    collection, query, where, onSnapshot,
+    sanitizeHTML, sanitizeInput, truncate,
+    RateLimiter, SecureSession
+} from './firebase.js';
+
+// Import Firebase getIdToken directly for reliable token retrieval
+import { getIdToken as firebaseGetIdToken } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+const SHOWS_COLLECTION  = 'shows';
+const MAX_REMARKS       = 500;
+const MAX_REMARK_LENGTH = 1000;
+
+let currentUser         = null;
+let isLoggingOut        = false;
+let assignedShows       = [];
+let selectedShow        = null;
+let originalFormData    = {};
+let unsubscribeSnapshot = null;
+let pendingSaveData     = null;
+let writeMethod         = 'direct';
+
+const chatLimiter = new RateLimiter(10, 60_000, 'writer_chat');
+const saveLimiter = new RateLimiter(5,  60_000, 'writer_save');
+const escapeHtml  = sanitizeHTML;
+
+// ── Reliable token getter ─────────────────────────────────────────────────────
+async function getAuthToken() {
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error('No authenticated user');
+    }
+    try {
+        return await firebaseGetIdToken(user, true);
+    } catch (e) {
+        throw new Error(`Token error: ${e.message}`);
+    }
+}
+
+// ── Email helper (fire-and-forget) ────────────────────────────────────────────
+async function sendEmail(type, data) {
+    try {
+        let idToken;
+        try {
+            idToken = await getAuthToken();
+        } catch (tokenErr) {
+            console.warn('[Email] Could not get auth token:', tokenErr.message);
+            return;
+        }
+
+        if (!idToken || idToken.length < 100) {
+            console.warn('[Email] Token too short:', idToken?.length);
+            return;
+        }
+
+        console.log('[Email] Sending type:', type, '| worker:', WORKER_URL);
+
+        const resp = await fetch(`${WORKER_URL}/api/send-email`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ type, idToken, data }),
+        });
+
+        const respText = await resp.text();
+        console.log('[Email] Response:', resp.status, respText.substring(0, 300));
+
+        if (!resp.ok) {
+            console.warn('[Email] HTTP error:', resp.status, respText);
+            return;
+        }
+
+        try {
+            const result = JSON.parse(respText);
+            if (result.success) {
+                console.log('[Email] ✅ Sent successfully:', type);
+            } else {
+                console.warn('[Email] ❌ Worker returned failure:', result.error);
+            }
+        } catch (_) {
+            console.log('[Email] ✅ Sent (non-JSON response):', type);
+        }
+    } catch (e) {
+        console.warn('[Email] Exception:', e.message);
+    }
+}
+
+// ── URL Validation ────────────────────────────────────────────────────────────
+function isValidLink(str) {
+    if (!str || !str.trim()) return true;
+    const trimmed = str.trim();
+    try {
+        const url = new URL(trimmed);
+        return url.protocol === 'https:' || url.protocol === 'http:';
+    } catch (_) {
+        try {
+            const url = new URL('https://' + trimmed);
+            return url.hostname.includes('.');
+        } catch (_) {
+            return false;
+        }
+    }
+}
+
+// ── Field configuration ───────────────────────────────────────────────────────
+const WRITER_EDITABLE_FIELDS = {
+    showAssetsLink:        'showAssetsLink',
+    localizationNotesLink: 'localizationNotesLink',
+    screenplayDraft1:      'screenplayDraft1',
+    screenplayDraft2:      'screenplayDraft2',
+    finalScreenplayLink:   'finalScreenplayLink',
+    advanceInvoiceLink:    'advanceInvoiceLink',
+    finalInvoiceLink:      'finalInvoiceLink',
+};
+const WRITER_FIELD_IDS = Object.keys(WRITER_EDITABLE_FIELDS);
+const URL_FIELDS       = [...WRITER_FIELD_IDS];
+const FIELD_LABELS = {
+    showAssetsLink:        'Show Assets Link',
+    localizationNotesLink: 'Localization Notes Link',
+    screenplayDraft1:      'Screenplay Draft 1',
+    screenplayDraft2:      'Screenplay Draft 2',
+    finalScreenplayLink:   'Final Screenplay Link',
+    advanceInvoiceLink:    'Advance Invoice Link',
+    finalInvoiceLink:      'Final Invoice Link',
+};
+const ADMIN_LOCKED_FIELDS = [
+    { key:'writerStatus',          label:'Status',                         type:'status',  icon:'📊', aliases:['status'] },
+    { key:'ogNoOfEpisodes',        label:'OG No. of Episodes',             type:'number',  icon:'🎬', aliases:['ogEpisodes'] },
+    { key:'finalNoOfEpisodes',     label:'Final No. of Episodes',          type:'number',  icon:'🎬', aliases:['finalEpisodes'] },
+    { key:'totalApprovedEpisodes', label:'Total Approved No. of Episodes', type:'number',  icon:'✅', aliases:['approvedEpisodes'] },
+    { key:'advancePaymentStatus',  label:'Advance Payment Status',         type:'payment', icon:'💳', aliases:[] },
+    { key:'finalPaymentStatus',    label:'Final Payment Status',           type:'payment', icon:'💳', aliases:[] },
+];
+const lockedLinkValues = {};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function getFieldValue(show, key, aliases = []) {
+    if (show[key] !== undefined && show[key] !== null && show[key] !== '') return show[key];
+    for (const alias of aliases) {
+        if (show[alias] !== undefined && show[alias] !== null && show[alias] !== '') return show[alias];
+    }
+    return '';
+}
+function getDisplayStatus(show)  { return show.writerStatus || show.status || ''; }
+function getRemarks(show)        { return Array.isArray(show.remarks) ? show.remarks : []; }
+function getStatusClass(s) {
+    const map = {
+        'Assets Shared':                          'status-assets-shared',
+        'Localization Notes Received':            'status-localization-notes-received',
+        'Localization Discussion WIP':            'status-localization-discussion-wip',
+        'Localization Completed':                 'status-localization-completed',
+        'Scripting WIP':                          'status-scripting-wip',
+        'Draft 1 (10-15 Episodes Received)':      'status-draft1-partial',
+        'Draft 1 (All Episodes Received)':        'status-draft1-all',
+        'Completed':                              'status-completed',
+        'Paused':                                 'status-paused',
+    };
+    return map[s] || 'status-default';
+}
+function getPaymentClass(s) {
+    if (!s) return 'payment-empty';
+    return s === 'Completed' ? 'payment-completed' : 'payment-pending';
+}
+function formatTime(iso) {
+    const d = new Date(iso), n = new Date();
+    const t = d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    if (d.toDateString() === n.toDateString()) return t;
+    const y = new Date(n); y.setDate(y.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return `Yesterday ${t}`;
+    return `${d.toLocaleDateString([], { month:'short', day:'numeric' })} ${t}`;
+}
+function getDateLabel(iso) {
+    const d = new Date(iso), n = new Date();
+    if (d.toDateString() === n.toDateString()) return 'Today';
+    const y = new Date(n); y.setDate(y.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString([], { weekday:'long', month:'short', day:'numeric' });
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+let notifTimers = {};
+window.hideNotification = function(type) {
+    const map = { success:'successNotification', error:'errorNotification', info:'infoNotification' };
+    document.getElementById(map[type])?.classList.remove('show');
+};
+function showNotification(type, msg) {
+    const map = {
+        success: { id:'successNotification', textId:'successText', dur:5000 },
+        error:   { id:'errorNotification',   textId:'errorText',   dur:10000 },
+        info:    { id:'infoNotification',    textId:'infoText',    dur:5000 },
+    };
+    ['success','error','info'].forEach(t => {
+        if (notifTimers[t]) { clearTimeout(notifTimers[t]); delete notifTimers[t]; }
+        document.getElementById(map[t].id).classList.remove('show');
+    });
+    const cfg = map[type];
+    document.getElementById(cfg.textId).textContent = msg;
+    document.getElementById(cfg.id).classList.add('show');
+    notifTimers[type] = setTimeout(() => {
+        document.getElementById(cfg.id).classList.remove('show');
+        delete notifTimers[type];
+    }, cfg.dur);
+    if (type === 'error') window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showPermissionBanner(errorCode = 'permission-denied') {
+    document.getElementById('permissionErrorCode').textContent = errorCode;
+    document.getElementById('permissionBanner').classList.add('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Firestore write with fallback ─────────────────────────────────────────────
+async function writerUpdateDoc(showCode, updateData) {
+    if (writeMethod !== 'worker') {
+        try {
+            await updateDoc(doc(db, SHOWS_COLLECTION, showCode), updateData);
+            writeMethod = 'direct';
+            return { success: true };
+        } catch(e) {
+            if (e.code === 'permission-denied' || e.code === 'PERMISSION_DENIED') {
+                writeMethod = 'worker';
+            } else {
+                return { success: false, error: e.message, code: e.code };
+            }
+        }
+    }
+    if (!WORKER_URL) {
+        return { success: false, error: 'Permission denied and no worker URL configured.', code: 'permission-denied' };
+    }
+    try {
+        let idToken = '';
+        try { idToken = await getAuthToken(); } catch(_) {}
+        const resp = await fetch(`${WORKER_URL}/api/writer-update`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ idToken, showCode, updateData })
+        });
+        if (!resp.ok) {
+            const txt = await resp.text().catch(() => resp.statusText);
+            return { success: false, error: `Worker error ${resp.status}: ${txt}`, code: 'worker-error' };
+        }
+        const result = await resp.json().catch(() => ({ success: true }));
+        return result.success !== false ? { success: true } : { success: false, error: result.error || 'Worker failed', code: 'worker-error' };
+    } catch(e) {
+        return { success: false, error: e.message, code: 'network-error' };
+    }
+}
+
+// ── Locked Link Fields ────────────────────────────────────────────────────────
+function renderLockedLinkFields(show) {
+    const pairs = [
+        { key:'draft1Comments', aliases:['screenplayDraft1Comments'], textId:'draft1CommentsText', copyId:'copy-draft1Comments', openId:'open-draft1Comments' },
+        { key:'draft2Comments', aliases:['screenplayDraft2Comments'], textId:'draft2CommentsText', copyId:'copy-draft2Comments', openId:'open-draft2Comments' },
+    ];
+    pairs.forEach(({ key, aliases, textId, copyId, openId }) => {
+        const val    = getFieldValue(show, key, aliases);
+        lockedLinkValues[key] = val;
+        const textEl = document.getElementById(textId);
+        const copyEl = document.getElementById(copyId);
+        const openEl = document.getElementById(openId);
+        if (!textEl) return;
+        if (val) {
+            textEl.textContent = val;
+            textEl.classList.remove('empty');
+            textEl.classList.add('is-link');
+            if (copyEl) copyEl.disabled = false;
+            if (openEl) openEl.disabled = false;
+        } else {
+            textEl.textContent = 'Not provided yet';
+            textEl.classList.add('empty');
+            textEl.classList.remove('is-link');
+            if (copyEl) copyEl.disabled = true;
+            if (openEl) openEl.disabled = true;
+        }
+    });
+}
+window.copyLockedField = function(key, btnId) {
+    const link = lockedLinkValues[key]; if (!link) return;
+    navigator.clipboard.writeText(link).then(() => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '✅ Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 2000);
+        }
+        showNotification('success', 'Link copied to clipboard!');
+    }).catch(() => showNotification('error', 'Could not copy — try manually selecting the link.'));
+};
+window.openLockedField = function(key) {
+    const link = lockedLinkValues[key]; if (!link) return;
+    try {
+        const url = new URL(link);
+        if (url.protocol === 'https:' || url.protocol === 'http:') {
+            window.open(link, '_blank', 'noopener,noreferrer');
+        } else {
+            showNotification('error', 'Only HTTP/HTTPS links can be opened for security.');
+        }
+    } catch(_) {
+        if (link.startsWith('http://') || link.startsWith('https://')) {
+            window.open(link, '_blank', 'noopener,noreferrer');
+        } else {
+            showNotification('error', 'Invalid link format.');
+        }
+    }
+};
+
+// ── Admin-Locked Fields ───────────────────────────────────────────────────────
+function renderAdminLockedFields(show) {
+    const grid = document.getElementById('adminLockedFieldsGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    ADMIN_LOCKED_FIELDS.forEach(field => {
+        const value = getFieldValue(show, field.key, field.aliases || []);
+        const item  = document.createElement('div');
+        item.className = 'admin-field-item';
+        let valueHtml = '';
+        if (field.type === 'status') {
+            const ds = value || getDisplayStatus(show);
+            valueHtml = `<span class="status-badge ${getStatusClass(ds)}">${escapeHtml(ds || 'Not Set')}</span>`;
+        } else if (field.type === 'number') {
+            const display = (value !== '' && value !== null && value !== undefined) ? String(value) : '—';
+            valueHtml = `<span style="font-size:1.25rem;font-weight:700;color:#2c3e50;">${escapeHtml(display)}</span>`;
+        } else if (field.type === 'payment') {
+            valueHtml = `<span class="payment-badge ${getPaymentClass(value)}">${escapeHtml(value || 'Not Set')}</span>`;
+        }
+        item.innerHTML = `<div class="admin-field-label">${field.icon} ${escapeHtml(field.label)}<span style="font-size:0.6rem;opacity:0.4;">🔒</span></div><div class="admin-field-value">${valueHtml}</div>`;
+        grid.appendChild(item);
+    });
+}
+
+// ── Confirm Modal ─────────────────────────────────────────────────────────────
+function buildConfirmHtml(newData) {
+    if (!selectedShow) return '';
+    const showName = escapeHtml(selectedShow.showOgName || selectedShow.showEnglishName || 'Untitled');
+    const showCode = escapeHtml(selectedShow.showCode || 'N/A');
+    let html = `<div class="confirm-show-info"><span class="confirm-show-code">${showCode}</span><span class="confirm-show-name">${showName}</span></div>`;
+    const changes = [], unchanged = [];
+    WRITER_FIELD_IDS.forEach(formId => {
+        const firebaseField = WRITER_EDITABLE_FIELDS[formId];
+        const newVal = String(newData[firebaseField] || '').trim();
+        const oldVal = String(originalFormData[formId] || '').trim();
+        const label  = FIELD_LABELS[firebaseField] || firebaseField;
+        const isLink = URL_FIELDS.includes(formId);
+        if (newVal !== oldVal) changes.push({ label, oldVal, newVal, isLink });
+        else if (newVal)       unchanged.push({ label, value: newVal, isLink });
+    });
+    if (changes.length > 0) {
+        html += `<div class="confirm-summary"><span>✏️</span><span><strong>${changes.length} field${changes.length !== 1 ? 's' : ''}</strong> will be updated</span></div>`;
+        html += `<div class="confirm-section-title">Changes (${changes.length})</div><div class="confirm-changes-list">`;
+        changes.forEach(({ label, oldVal, newVal, isLink }) => {
+            const oldDisplay = oldVal
+                ? (isLink ? escapeHtml(truncate(oldVal, 60)) : escapeHtml(oldVal))
+                : '<em style="color:#adb5bd">Empty</em>';
+            const newDisplay = newVal
+                ? (isLink ? escapeHtml(truncate(newVal, 60)) : escapeHtml(newVal))
+                : '<em style="color:#dc3545">Will be cleared</em>';
+            html += `<div class="confirm-change-row changed"><div class="confirm-change-field">${escapeHtml(label)}</div><div class="confirm-change-diff"><span class="confirm-old-value">${oldDisplay}</span><span class="confirm-new-value ${isLink ? 'is-link' : ''}">→ ${newDisplay}</span></div></div>`;
+        });
+        html += '</div>';
+    } else {
+        html += `<div class="confirm-no-changes"><div class="confirm-no-changes-icon">✅</div><p>No changes detected. Nothing will be saved.</p></div>`;
+    }
+    if (unchanged.length > 0 && changes.length > 0) {
+        html += `<details style="margin-top:0.5rem;"><summary style="cursor:pointer;font-size:0.8125rem;color:#6c757d;padding:0.5rem 0;">📋 Unchanged fields (${unchanged.length})</summary><div class="confirm-changes-list" style="margin-top:0.5rem;">`;
+        unchanged.forEach(({ label, value, isLink }) => {
+            html += `<div class="confirm-change-row"><div class="confirm-change-field">${escapeHtml(label)}</div><div class="confirm-change-value ${isLink ? 'is-link' : ''}">${isLink ? escapeHtml(truncate(value, 55)) : escapeHtml(value)}</div></div>`;
+        });
+        html += '</div></details>';
+    }
+    return html;
+}
+function openConfirmModal(previewHtml, onConfirm) {
+    document.getElementById('confirmBody').innerHTML = previewHtml;
+    const saveBtn = document.getElementById('confirmSaveBtn');
+    const newBtn  = saveBtn.cloneNode(true);
+    saveBtn.parentNode.replaceChild(newBtn, saveBtn);
+    newBtn.addEventListener('click', async function() {
+        newBtn.disabled = true;
+        newBtn.innerHTML = '⏳ Saving…';
+        await onConfirm();
+        newBtn.disabled = false;
+        newBtn.innerHTML = '✓ Confirm & Save';
+        closeConfirmModal();
+    });
+    document.getElementById('confirmModal').classList.add('show');
+}
+window.closeConfirmModal = function() {
+    document.getElementById('confirmModal').classList.remove('show');
+    pendingSaveData = null;
+};
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+    if (e.target === this) closeConfirmModal();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('confirmModal').classList.contains('show')) {
+        closeConfirmModal();
+    }
+});
+
+// ── Remarks Rendering ─────────────────────────────────────────────────────────
+function renderRemarks(remarks) {
+    const area     = document.getElementById('remarksMessagesArea');
+    const countEl  = document.getElementById('remarksMsgCount');
+    if (countEl) countEl.textContent = `${remarks.length} message${remarks.length !== 1 ? 's' : ''}`;
+    if (!remarks || !remarks.length) {
+        area.innerHTML = `<div class="remarks-empty"><div class="remarks-empty-icon">💬</div><div class="remarks-empty-text">No remarks yet</div><div class="remarks-empty-sub">Start the conversation below</div></div>`;
+        return;
+    }
+    let html = '<div class="remarks-inner">', lastDate = '', lastSender = '';
+    remarks.forEach(msg => {
+        const dl = getDateLabel(msg.timestamp);
+        if (dl !== lastDate) {
+            html += `<div class="remarks-date-sep"><span class="remarks-date-label">${dl}</span></div>`;
+            lastDate = dl; lastSender = '';
+        }
+        const isWriter   = msg.role === 'writer';
+        const rowClass   = isWriter ? 'from-writer' : 'from-admin';
+        const senderName = truncate(msg.senderName || msg.senderEmail || '?', 40);
+        const initial    = senderName.charAt(0).toUpperCase();
+        const showName   = senderName !== lastSender;
+        lastSender = senderName;
+        html += `<div class="msg-row ${rowClass}">
+            <div class="msg-avatar">${escapeHtml(initial)}</div>
+            <div class="msg-group">
+                ${showName ? `<div class="msg-sender-name">${escapeHtml(senderName)}</div>` : ''}
+                <div class="msg-bubble">${escapeHtml(truncate(msg.text || '', MAX_REMARK_LENGTH))}</div>
+                <div class="msg-time">${formatTime(msg.timestamp)}</div>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    area.innerHTML = html;
+    area.scrollTop = area.scrollHeight;
+}
+
+// ── Send Writer Message ───────────────────────────────────────────────────────
+window.sendWriterMessage = async function() {
+    if (!selectedShow) return;
+    if (!chatLimiter.canProceed()) {
+        showNotification('error', 'Sending too quickly — please wait a moment.');
+        return;
+    }
+
+    const input   = document.getElementById('writerChatInput');
+    const rawText = input.value.trim();
+    if (!rawText) return;
+    if (rawText.length > MAX_REMARK_LENGTH) {
+        showNotification('error', `Message too long (max ${MAX_REMARK_LENGTH} chars).`);
+        return;
+    }
+
+    const text = sanitizeInput(rawText, MAX_REMARK_LENGTH);
+    if (!text) return;
+
+    const btn = document.getElementById('writerChatSendBtn');
+    btn.disabled = true;
+
+    const currentRemarks = getRemarks(selectedShow);
+    if (currentRemarks.length >= MAX_REMARKS) {
+        showNotification('error', `Max ${MAX_REMARKS} remarks reached.`);
+        btn.disabled = false;
+        return;
+    }
+
+    const ud         = SecureSession.getUserData() || {};
+    const writerName = truncate(ud.name || currentUser.email.split('@')[0], 50);
+
+    const newMsg = {
+        text,
+        senderEmail: currentUser.email,
+        senderName:  writerName,
+        role:        'writer',
+        timestamp:   new Date().toISOString()
+    };
+
+    const result = await writerUpdateDoc(selectedShow.showCode, {
+        remarks:       [...currentRemarks, newMsg],
+        updatedAt:     new Date().toISOString(),
+        lastUpdatedBy: currentUser.email
+    });
+
+    if (result.success) {
+        input.value = '';
+        input.style.height = 'auto';
+        updateCharCounter('');
+
+        // ── Email: notify all admins (no condition — worker uses ADMIN_EMAILS secret) ──
+        sendEmail('new-remark-to-admin', {
+            showCode:       selectedShow.showCode   || '',
+            showName:       selectedShow.showOgName || selectedShow.showEnglishName || '',
+            writerName:     writerName,
+            writerEmail:    currentUser.email,
+            messagePreview: text.substring(0, 200),
+            totalMessages:  currentRemarks.length + 1,
+        });
+        // Fire-and-forget — errors logged inside sendEmail
+
+    } else if (result.code === 'permission-denied') {
+        showPermissionBanner(result.code);
+        showNotification('error', 'Permission denied — contact your admin.');
+    } else {
+        showNotification('error', `Failed to send: ${result.error}`);
+    }
+
+    btn.disabled = false;
+    input.focus();
+};
+
+function updateCharCounter(val) {
+    const el = document.getElementById('remarksCharCounter');
+    if (!el) return;
+    const len = val.length;
+    el.textContent = `${len} / 1000`;
+    el.classList.remove('warn', 'limit');
+    if (len >= 1000) el.classList.add('limit');
+    else if (len >= 800) el.classList.add('warn');
+}
+
+const chatTextarea = document.getElementById('writerChatInput');
+chatTextarea.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    updateCharCounter(this.value);
+});
+chatTextarea.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendWriterMessage();
+    }
+});
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async (user) => {
+    if (isLoggingOut) return;
+    if (user && user.emailVerified) {
+        if (user.email.endsWith('@dashverse.ai')) {
+            window.location.replace('admin-dashboard.html');
+            return;
+        }
+        if (!SecureSession.hasActiveSession(user.uid)) {
+            isLoggingOut = true;
+            SecureSession.clear();
+            try { await auth.signOut(); } catch(e) {}
+            window.location.replace('login.html');
+            return;
+        }
+        currentUser = user;
+        const ud = SecureSession.getUserData() || {};
+        const n  = ud.name || user.email.split('@')[0];
+        const fn = n.split(' ')[0];
+        document.getElementById('userName').textContent           = fn;
+        document.getElementById('welcomeName').textContent        = fn;
+        document.getElementById('userAvatar').textContent         = fn.charAt(0).toUpperCase();
+        document.getElementById('remarksInputAvatar').textContent = fn.charAt(0).toUpperCase();
+        await loadAssignedShows();
+        setupRealtimeListener();
+    } else {
+        window.location.replace('login.html');
+    }
+});
+
+// ── Load Shows ────────────────────────────────────────────────────────────────
+async function loadAssignedShows() {
+    try {
+        const email = currentUser.email.toLowerCase().trim();
+        const snap  = await getDocs(query(collection(db, SHOWS_COLLECTION), where('writerEmail', '==', email)));
+        assignedShows = [];
+        snap.forEach(d => { const data = d.data(); data._id = d.id; assignedShows.push(data); });
+        if (!assignedShows.length) {
+            displayNoShows();
+            document.getElementById('statsGrid').style.display = 'none';
+        } else {
+            displayShows();
+            updateStats();
+            document.getElementById('statsGrid').style.display = 'grid';
+        }
+    } catch(e) {
+        showNotification('error', 'Failed to load shows: ' + e.message);
+        displayNoShows();
+    }
+}
+
+// ── Realtime Listener ─────────────────────────────────────────────────────────
+function setupRealtimeListener() {
+    if (unsubscribeSnapshot) unsubscribeSnapshot();
+    const email = currentUser.email.toLowerCase().trim();
+    unsubscribeSnapshot = onSnapshot(
+        query(collection(db, SHOWS_COLLECTION), where('writerEmail', '==', email)),
+        (snap) => {
+            assignedShows = [];
+            snap.forEach(d => { const data = d.data(); data._id = d.id; assignedShows.push(data); });
+            const inSelection = document.getElementById('showSelectionCard').style.display !== 'none';
+            if (inSelection) {
+                if (!assignedShows.length) {
+                    displayNoShows();
+                    document.getElementById('statsGrid').style.display = 'none';
+                } else {
+                    displayShows();
+                    updateStats();
+                    document.getElementById('statsGrid').style.display = 'grid';
+                }
+            }
+            if (selectedShow) {
+                const updated = assignedShows.find(s => s.showCode === selectedShow.showCode);
+                if (updated) {
+                    selectedShow = updated;
+                    renderAdminLockedFields(updated);
+                    renderLockedLinkFields(updated);
+                    displayLockedShowInfo(updated);
+                    renderRemarks(getRemarks(updated));
+                    updateStats();
+                } else {
+                    showNotification('info', 'This show was updated or reassigned by admin.');
+                    backToSelection();
+                }
+            }
+        },
+        (e) => { showNotification('error', 'Realtime sync lost: ' + e.message); }
+    );
+}
+
+// ── Display Helpers ───────────────────────────────────────────────────────────
+function displayNoShows() {
+    const badge = document.getElementById('showCountBadge');
+    if (badge) badge.textContent = '';
+    document.getElementById('showsContainer').innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><h3>No Shows Assigned</h3><p>No shows have been assigned to <strong>${escapeHtml(currentUser?.email || '')}</strong> yet.<br>Please contact your admin.</p></div>`;
+}
+function displayShows() {
+    const badge = document.getElementById('showCountBadge');
+    if (badge) badge.textContent = `${assignedShows.length} show${assignedShows.length !== 1 ? 's' : ''}`;
+    document.getElementById('showsContainer').innerHTML = '<div class="show-cards-grid" id="showCardsGrid"></div>';
+    const grid = document.getElementById('showCardsGrid');
+    assignedShows.forEach((show, i) => {
+        const ds     = getDisplayStatus(show);
+        const sc     = getStatusClass(ds);
+        const rm     = getRemarks(show);
+        const advPay = show.advancePaymentStatus || '';
+        const finPay = show.finalPaymentStatus   || '';
+        const appEps = getFieldValue(show, 'totalApprovedEpisodes', ['approvedEpisodes']);
+        const card   = document.createElement('div');
+        card.className = 'show-card';
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('aria-label', `Select show ${show.showOgName || show.showCode}`);
+        card.onclick   = () => selectShow(i);
+        card.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectShow(i); } };
+        card.innerHTML = `
+            <div class="show-card-header">
+                <span class="show-id-badge">${escapeHtml(show.showCode || 'N/A')}</span>
+                <span class="status-badge ${sc}">${escapeHtml(ds || 'Not Set')}</span>
+            </div>
+            <div class="show-name">${escapeHtml(show.showOgName || show.showEnglishName || 'Untitled')}</div>
+            ${show.showEnglishName && show.showOgName ? `<div class="show-working-name">${escapeHtml(show.showEnglishName)}</div>` : ''}
+            <div class="show-details">
+                <div class="detail-row"><span class="detail-label">Language</span><span class="detail-value">${escapeHtml(show.language || '—')}</span></div>
+                <div class="detail-row"><span class="detail-label">Approved Episodes</span><span class="detail-value">${escapeHtml(appEps || '—')}</span></div>
+                <div class="detail-row"><span class="detail-label">Advance Payment</span><span class="detail-value"><span class="payment-badge ${getPaymentClass(advPay)}">${escapeHtml(advPay || 'Not Set')}</span></span></div>
+                <div class="detail-row"><span class="detail-label">Final Payment</span><span class="detail-value"><span class="payment-badge ${getPaymentClass(finPay)}">${escapeHtml(finPay || 'Not Set')}</span></span></div>
+                <div class="detail-row"><span class="detail-label">Remarks</span><span class="detail-value">💬 ${rm.length}</span></div>
+            </div>`;
+        grid.appendChild(card);
+    });
+}
+function updateStats() {
+    document.getElementById('assignedShowsCount').textContent = assignedShows.length;
+    document.getElementById('inProgressCount').textContent    = assignedShows.filter(s => getDisplayStatus(s) === 'Scripting WIP').length;
+    document.getElementById('completedCount').textContent     = assignedShows.filter(s => getDisplayStatus(s) === 'Completed').length;
+    document.getElementById('totalEpisodesCount').textContent = assignedShows.reduce((sum, s) => {
+        const v = getFieldValue(s, 'totalApprovedEpisodes', ['approvedEpisodes']);
+        return sum + (parseInt(v) || 0);
+    }, 0);
+}
+
+// ── Select Show ───────────────────────────────────────────────────────────────
+window.selectShow = function(i) {
+    selectedShow = assignedShows[i];
+    if (!selectedShow) return;
+    document.getElementById('showSelectionCard').style.display = 'none';
+    document.getElementById('showEditorCard').style.display    = 'block';
+    document.getElementById('statsGrid').style.display         = 'none';
+    document.getElementById('editorShowTitle').textContent     = `📺 ${selectedShow.showOgName || selectedShow.showEnglishName || 'Untitled'}`;
+    displayLockedShowInfo(selectedShow);
+    renderAdminLockedFields(selectedShow);
+    renderLockedLinkFields(selectedShow);
+    WRITER_FIELD_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = getFieldValue(selectedShow, WRITER_EDITABLE_FIELDS[id]) || '';
+    });
+    originalFormData = {};
+    WRITER_FIELD_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        originalFormData[id] = el ? (el.value || '') : '';
+    });
+    document.querySelectorAll('.form-input.error').forEach(el => el.classList.remove('error'));
+    renderRemarks(getRemarks(selectedShow));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+function displayLockedShowInfo(show) {
+    document.getElementById('lockedFieldsGrid').innerHTML = `
+        <div class="field-item"><span class="field-label">Show Code</span><span class="field-value"><span class="show-id-badge">${escapeHtml(show.showCode || 'N/A')}</span></span></div>
+        <div class="field-item"><span class="field-label">Chinese Name</span><span class="field-value">${escapeHtml(show.showOgName || '—')}</span></div>
+        <div class="field-item"><span class="field-label">Working Name</span><span class="field-value">${escapeHtml(show.showEnglishName || '—')}</span></div>
+        <div class="field-item"><span class="field-label">Language</span><span class="field-value">${escapeHtml(show.language || '—')}</span></div>
+        <div class="field-item"><span class="field-label">Show Type</span><span class="field-value">${escapeHtml(show.showType === 'OR' ? 'Originals' : show.showType === 'AD' ? 'Adaptation' : show.showType || '—')}</span></div>
+        <div class="field-item"><span class="field-label">License Status</span><span class="field-value"><span class="status-badge ${show.licenseStatus === 'Available' ? 'status-localization-completed' : 'status-paused'}">${escapeHtml(show.licenseStatus || '—')}</span></span></div>`;
+}
+window.backToSelection = function() {
+    selectedShow = null;
+    document.getElementById('showSelectionCard').style.display = 'block';
+    document.getElementById('showEditorCard').style.display    = 'none';
+    document.getElementById('statsGrid').style.display         = 'grid';
+    document.getElementById('permissionBanner').classList.remove('show');
+    if (assignedShows.length) { displayShows(); updateStats(); }
+    else displayNoShows();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+window.resetForm = function() {
+    if (!confirm('Reset all fields to last saved values?')) return;
+    WRITER_FIELD_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.value = originalFormData[id] || ''; el.classList.remove('error'); }
+    });
+    showNotification('info', 'Form has been reset to last saved values.');
+};
+
+// ── Form Submit ───────────────────────────────────────────────────────────────
+document.getElementById('updateForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!selectedShow)             { showNotification('error', 'No show selected.'); return; }
+    if (!saveLimiter.canProceed()) { showNotification('error', 'Saving too quickly — wait a moment.'); return; }
+
+    document.querySelectorAll('.form-input.error').forEach(el => el.classList.remove('error'));
+
+    for (const fieldId of URL_FIELDS) {
+        const el = document.getElementById(fieldId);
+        const v  = el?.value?.trim();
+        if (v && !isValidLink(v)) {
+            el.classList.add('error');
+            el.focus();
+            showNotification('error', `Invalid link in "${FIELD_LABELS[WRITER_EDITABLE_FIELDS[fieldId]] || fieldId}". Please enter a valid link.`);
+            return;
+        }
+    }
+
+    const updateData = {};
+    WRITER_FIELD_IDS.forEach(id => {
+        updateData[WRITER_EDITABLE_FIELDS[id]] = truncate(document.getElementById(id)?.value?.trim() || '', 2000);
+    });
+    updateData.updatedAt     = new Date().toISOString();
+    updateData.lastUpdatedBy = currentUser.email;
+
+    pendingSaveData = updateData;
+    openConfirmModal(buildConfirmHtml(updateData), executeSave);
+});
+
+async function executeSave() {
+    if (!pendingSaveData || !selectedShow) return;
+    const btn = document.getElementById('saveButton');
+    btn.disabled = true;
+    btn.textContent = '⏳ Saving…';
+
+    const result = await writerUpdateDoc(selectedShow.showCode, pendingSaveData);
+    if (result.success) {
+        Object.assign(selectedShow, pendingSaveData);
+        WRITER_FIELD_IDS.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) originalFormData[id] = el.value || '';
+        });
+        showNotification('success', '✅ Changes saved successfully!');
+    } else if (result.code === 'permission-denied') {
+        showPermissionBanner(result.code);
+        showNotification('error', 'Permission denied — contact your admin.');
+    } else {
+        showNotification('error', `Failed to save: ${result.error}`);
+    }
+
+    btn.disabled = false;
+    btn.textContent = '📝 Review & Save Changes';
+    pendingSaveData = null;
+}
+
+// ── Logout ────────────────────────────────────────────────────────────────────
+window.logout = function() {
+    if (!confirm('Are you sure you want to logout?')) return;
+    isLoggingOut = true;
+    if (unsubscribeSnapshot) try { unsubscribeSnapshot(); } catch(_) {}
+    SecureSession.clear();
+    sessionStorage.clear();
+    try {
+        const bc = new BroadcastChannel('dashverse_auth');
+        bc.postMessage({ type: 'logout' });
+        bc.close();
+    } catch(_) {}
+    auth.signOut()
+        .then(() => window.location.replace('login.html'))
+        .catch(() => {
+            isLoggingOut = false;
+            showNotification('error', 'Logout failed. Please try again.');
+        });
+};
+try {
+    const bc = new BroadcastChannel('dashverse_auth');
+    bc.onmessage = (e) => {
+        if (e.data?.type === 'logout' && !isLoggingOut) {
+            isLoggingOut = true;
+            if (unsubscribeSnapshot) try { unsubscribeSnapshot(); } catch(_) {}
+            SecureSession.clear();
+            window.location.replace('login.html');
+        }
+    };
+} catch(_) {}
+</script>
+</body>
+</html>
