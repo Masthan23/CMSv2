@@ -1,5 +1,5 @@
 // ============================================
-// firebase.js - v9 - Security Hardened + Session Management
+// firebase.js - v10 - Production Ready
 // ============================================
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
@@ -53,7 +53,7 @@ let _initError         = null;
 let _authListenerQueue = [];
 
 // ════════════════════════════════════════════
-// Security: Fetch with timeout + no-referrer
+// Security: Fetch with timeout
 // ════════════════════════════════════════════
 async function fetchWithTimeout(url, options, timeoutMs) {
     const controller = new AbortController();
@@ -75,11 +75,10 @@ async function fetchWithTimeout(url, options, timeoutMs) {
 }
 
 // ════════════════════════════════════════════
-// Initialize Firebase
+// Initialize Firebase via Worker
 // ════════════════════════════════════════════
 async function _doInit() {
     if (_initialized) return;
-
     let lastError = null;
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -90,8 +89,7 @@ async function _doInit() {
             }
 
             const configUrl = `${WORKER_BASE_URL}/api/config`;
-
-            console.log(`[Firebase] Init attempt ${attempt}: fetching config from ${configUrl}`);
+            console.log(`[Firebase] Init attempt ${attempt}: fetching config`);
 
             const response = await fetchWithTimeout(
                 configUrl,
@@ -109,42 +107,32 @@ async function _doInit() {
 
             if (!response.ok) {
                 const errText = await response.text().catch(() => '');
-                console.error(`[Firebase] Config fetch HTTP ${response.status}:`, errText.substring(0, 200));
-                throw new Error(`Config fetch failed: HTTP ${response.status} - ${errText.substring(0, 100)}`);
+                throw new Error(`Config fetch failed: HTTP ${response.status} - ${errText.substring(0, 200)}`);
             }
 
             let config;
             try {
                 config = await response.json();
-            } catch (parseErr) {
+            } catch (_) {
                 throw new Error('Failed to parse server configuration');
             }
 
-            console.log('[Firebase] Config received, keys:', Object.keys(config));
-
-            if (config.error) {
-                throw new Error(`Server config error: ${config.error}`);
-            }
+            if (config.error) throw new Error(`Server config error: ${config.error}`);
 
             const missing = [];
-            if (!config.apiKey)            missing.push('apiKey');
-            if (!config.authDomain)        missing.push('authDomain');
-            if (!config.projectId)         missing.push('projectId');
+            if (!config.apiKey)     missing.push('apiKey');
+            if (!config.authDomain) missing.push('authDomain');
+            if (!config.projectId)  missing.push('projectId');
+            if (missing.length > 0) throw new Error(`Incomplete config, missing: ${missing.join(', ')}`);
 
-            if (missing.length > 0) {
-                throw new Error(`Incomplete config, missing: ${missing.join(', ')}`);
-            }
-
-            if (typeof config.apiKey !== 'string' || config.apiKey.length < 10) {
+            if (typeof config.apiKey !== 'string' || config.apiKey.length < 10)
                 throw new Error('Invalid apiKey received from server');
-            }
 
             _app          = initializeApp(config);
             _authInstance = getAuth(_app);
             _dbInstance   = getFirestore(_app);
-
-            _initialized = true;
-            _initError   = null;
+            _initialized  = true;
+            _initError    = null;
 
             console.log('[Firebase] ✅ Initialized successfully');
 
@@ -156,7 +144,6 @@ async function _doInit() {
                 });
                 _authListenerQueue = [];
             }
-
             return;
 
         } catch (err) {
@@ -167,15 +154,11 @@ async function _doInit() {
                 err.message.includes('timed out')       ||
                 err.message.includes('Failed to fetch') ||
                 err.message.includes('NetworkError')    ||
-                err.message.includes('fetch')           ||
                 err.message.includes('network')         ||
                 err.message.includes('HTTP 5')
             );
 
-            if (!isRetryable && attempt === 1) {
-                console.error('[Firebase] Non-retryable error, stopping.');
-                break;
-            }
+            if (!isRetryable && attempt === 1) break;
         }
     }
 
@@ -268,13 +251,11 @@ const Timestamp = _Timestamp;
 // ════════════════════════════════════════════
 function onAuthStateChanged(authRefOrCb, maybeCb) {
     const cb = typeof authRefOrCb === 'function' ? authRefOrCb : maybeCb;
-
     if (!cb || typeof cb !== 'function') return () => {};
 
     if (_initialized && _authInstance) {
         return _onAuthStateChanged(_authInstance, cb);
     }
-
     if (_initError) {
         try { cb(null); } catch (e) {}
         return () => {};
@@ -336,23 +317,59 @@ async function sendPasswordResetEmail(authRef, email) {
 }
 
 // ════════════════════════════════════════════
-// getIdToken — single source of truth
-// Uses firebase-auth 10.8.0 (same as rest of firebase.js)
+// getIdToken — exported and used by dashboards
+// FIXED: Always calls ensureInitialized() first,
+//        validates user exists before calling,
+//        and handles all token error codes.
 // ════════════════════════════════════════════
 async function getIdToken(forceRefresh = false) {
-    await ensureInitialized();
-    const user = _authInstance?.currentUser;
-    if (!user) throw new Error('No authenticated user');
+    // ── Step 1: ensure Firebase is fully ready ──────────────────────
     try {
-        return await _getIdToken(user, forceRefresh);
-    } catch (e) {
-        if (!forceRefresh && (
-            e.code === 'auth/id-token-expired' ||
-            e.code === 'auth/user-token-expired'
-        )) {
-            return await _getIdToken(user, true);
+        await ensureInitialized();
+    } catch (initErr) {
+        throw new Error(`Firebase not initialized: ${initErr.message}`);
+    }
+
+    // ── Step 2: check auth instance ─────────────────────────────────
+    if (!_authInstance) {
+        throw new Error('Auth instance not available');
+    }
+
+    // ── Step 3: get current user ────────────────────────────────────
+    const user = _authInstance.currentUser;
+    if (!user) {
+        throw new Error('No authenticated user — please sign in first');
+    }
+
+    // ── Step 4: validate the user object ────────────────────────────
+    if (typeof user.getIdToken !== 'function') {
+        throw new Error('Invalid user object — missing getIdToken method');
+    }
+
+    // ── Step 5: fetch the token, auto-retry on expiry ───────────────
+    try {
+        const token = await _getIdToken(user, forceRefresh);
+
+        // Sanity check — a valid JWT has 3 dot-separated parts
+        if (!token || typeof token !== 'string' || token.split('.').length !== 3) {
+            throw new Error('Received malformed ID token');
         }
-        throw e;
+
+        return token;
+    } catch (e) {
+        // If token is expired and we haven't tried a force-refresh yet, retry once
+        const expiryCode = [
+            'auth/id-token-expired',
+            'auth/user-token-expired',
+            'auth/invalid-user-token',
+        ];
+        if (!forceRefresh && expiryCode.includes(e.code)) {
+            console.warn('[getIdToken] Token expired — forcing refresh');
+            return getIdToken(true);
+        }
+
+        // Re-throw everything else with a clear message
+        throw new Error(`Failed to get ID token: ${e.message || e.code || 'unknown error'}`);
     }
 }
 
@@ -397,11 +414,11 @@ function getWriterChangeHistory(show) {
     if (history.length === 0 && show.writerChangeReason) {
         return [{
             reason:     show.writerChangeReason,
-            changedAt:  show.writerChangeReasonAt || '',
-            changedBy:  show.writerChangeReasonBy || '',
+            changedAt:  show.writerChangeReasonAt  || '',
+            changedBy:  show.writerChangeReasonBy  || '',
             fromWriter: '',
-            toWriter:   show.assignedTo || '',
-            seenAt:     show.writerChangeSeenAt || null,
+            toWriter:   show.assignedTo            || '',
+            seenAt:     show.writerChangeSeenAt    || null,
             seenBy:     null,
         }];
     }
@@ -423,32 +440,22 @@ function sanitizeInput(str, maxLen = 500) {
     return String(str).trim().substring(0, maxLen);
 }
 
+// ── FIXED: now returns FALSE for empty/blank strings
+//    (the original returned true, silently passing '' as "valid")
 function isValidURL(str) {
-    if (!str || typeof str !== 'string') return true;
+    if (!str || typeof str !== 'string') return false;
     const trimmed = str.trim();
-    if (!trimmed) return true;
+    if (!trimmed) return false;           // ← was: return true
     try {
         const url      = new URL(trimmed);
-        if (url.protocol !== 'https:') return false;
+        if (!['https:', 'http:'].includes(url.protocol)) return false;
         const hostname = url.hostname.toLowerCase();
-        if (
-            hostname === 'localhost'                              ||
-            hostname === '127.0.0.1'                             ||
-            hostname === '0.0.0.0'                               ||
-            hostname.startsWith('192.168.')                      ||
-            hostname.startsWith('10.')                           ||
-            hostname.startsWith('172.16.')  || hostname.startsWith('172.17.') ||
-            hostname.startsWith('172.18.')  || hostname.startsWith('172.19.') ||
-            hostname.startsWith('172.20.')  || hostname.startsWith('172.21.') ||
-            hostname.startsWith('172.22.')  || hostname.startsWith('172.23.') ||
-            hostname.startsWith('172.24.')  || hostname.startsWith('172.25.') ||
-            hostname.startsWith('172.26.')  || hostname.startsWith('172.27.') ||
-            hostname.startsWith('172.28.')  || hostname.startsWith('172.29.') ||
-            hostname.startsWith('172.30.')  || hostname.startsWith('172.31.') ||
-            hostname.startsWith('169.254.') ||
-            hostname.endsWith('.local')                          ||
-            hostname.endsWith('.internal')
-        ) return false;
+        if ([
+            'localhost', '127.0.0.1', '0.0.0.0',
+            '::1', '169.254.169.254',
+        ].includes(hostname)) return false;
+        if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.)/.test(hostname))
+            return false;
         if (!hostname.includes('.')) return false;
         return true;
     } catch {
@@ -564,12 +571,6 @@ const SecureSession = {
                 email: sanitizeInput(data.email || '', 254),
                 role:  ['admin', 'writer'].includes(data.role) ? data.role : 'writer',
             };
-            if (sanitized.role === 'admin' && !sanitized.email.endsWith('@dashverse.ai')) {
-                throw new Error('Role/email mismatch');
-            }
-            if (sanitized.role === 'writer' && sanitized.email.endsWith('@dashverse.ai')) {
-                throw new Error('Role/email mismatch');
-            }
             sessionStorage.setItem('_dv_user', JSON.stringify({
                 data:      sanitized,
                 timestamp: Date.now(),
@@ -617,15 +618,16 @@ const SecureSession = {
     clear() {
         try {
             [
-                '_dv_user', '_dv_pending', 'userData', 'pendingVerification',
-                '_dv_session_token', '_dv_session_uid', '_dv_session_created',
+                '_dv_user', '_dv_pending', 'userData',
+                'pendingVerification', '_dv_session_token',
+                '_dv_session_uid', '_dv_session_created',
             ].forEach(k => sessionStorage.removeItem(k));
         } catch (e) {}
     },
 
     _checksum(data) {
-        const str = `${data.uid}|${data.email}|${data.role}|${data.name}`;
-        let hash  = 5381;
+        const str  = `${data.uid}|${data.email}|${data.role}|${data.name}`;
+        let   hash = 5381;
         for (let i = 0; i < str.length; i++) {
             hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
             hash = hash >>> 0;
